@@ -50,7 +50,7 @@ export async fn loadCollection(name, cfg) {
       let dm = /(\d{4}-\d{2}-\d{2})/.exec(rel)
       if (dm !== null) { t = parseDate(dm[1]) }
     }
-    let md = renderMarkdown(fm.content)
+    let md = renderMarkdown(fm.content, "html" in cfg ? { html: cfg.html } : null)
     let route = opt(cfg, "route", "/" + name + "/:slug")
     let url = route.replace(":slug", slug)
     if (!url.endsWith("/")) { url = url + "/" }
@@ -62,7 +62,7 @@ export async fn loadCollection(name, cfg) {
       title: opt(data, "title", slug),
       date: t === null ? null : toISO(t),
       time: t,
-      tags: opt(data, "tags", []),
+      tags: opt(data, "tags", []).filter((t, i, arr) => arr.indexOf(t) === i),
       description: opt(data, "description", null),
       image: opt(data, "image", null),
       data: data,

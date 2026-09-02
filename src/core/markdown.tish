@@ -2,10 +2,38 @@ import { parseDocument } from "@tishlang/tishdoc-parse"
 import { renderToHtmlFragment } from "@tishlang/tishdoc-render-html"
 import { slugify, stripTags } from "../util/html.tish"
 
-// renderMarkdown(src) -> { html, headings: [{level, text, id}] }
-export fn renderMarkdown(src) {
-  let pr = parseDocument(src, null)
+// tishdoc-render-html escapes raw HTML (safe by design). Content authored by the site owner is
+// trusted, so block-level and inline HTML is lifted out before parsing and restored afterwards.
+fn liftHtml(src) {
+  let blocks = []
+  let inlines = []
+  let text = src.replace(/<!--[\s\S]*?-->/g, "")
+  // block html: a run of lines that starts with a tag on its own line, ended by a blank line
+  text = text.replace(/(^|\n\n)(<(?:div|p|a|img|iframe|video|table|ul|ol|hr|br|figure|blockquote|section|pre|script|h[1-6]|center|span|em|strong|b|i|small|details|summary)[\s>\/][\s\S]*?)(?=\n\n|$)/g, (m, lead, html) => {
+    blocks.push(html)
+    return lead + "ORBITHTMLBLOCK" + (blocks.length - 1) + "END"
+  })
+  // inline html tags inside paragraphs
+  text = text.replace(/<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*?)?\/?>/g, (m) => {
+    inlines.push(m)
+    return "ORBITHTMLINLINE" + (inlines.length - 1) + "END"
+  })
+  return { text: text, blocks: blocks, inlines: inlines }
+}
+fn restoreHtml(html, lifted) {
+  let out = html.replace(/<p>ORBITHTMLBLOCK(\d+)END<\/p>/g, (m, i) => lifted.blocks[parseInt(i, 10)])
+  out = out.replace(/ORBITHTMLBLOCK(\d+)END/g, (m, i) => lifted.blocks[parseInt(i, 10)])
+  out = out.replace(/ORBITHTMLINLINE(\d+)END/g, (m, i) => lifted.inlines[parseInt(i, 10)])
+  return out
+}
+
+// renderMarkdown(src, opts) -> { html, headings: [{level, text, id}] } ; opts.html === false disables passthrough
+export fn renderMarkdown(src, opts) {
+  let allowHtml = !(opts !== null && "html" in opts && opts.html === false)
+  let lifted = allowHtml ? liftHtml(src) : { text: src, blocks: [], inlines: [] }
+  let pr = parseDocument(lifted.text, null)
   let html = renderToHtmlFragment(pr.ast)
+  if (allowHtml) { html = restoreHtml(html, lifted) }
   let headings = []
   let used = {}
   html = html.replace(/<h([1-6])>([\s\S]*?)<\/h\1>/g, (m, lvl, inner) => {
