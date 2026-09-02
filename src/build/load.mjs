@@ -32,7 +32,7 @@ export function cssSources(root, content) {
     for (const name of fs.readdirSync(dir)) {
       const p = path.join(dir, name)
       if (fs.statSync(p).isDirectory()) grab(p)
-      else if (/\.(tishx?|md|html|js)$/.test(name)) srcs.push(fs.readFileSync(p, 'utf8'))
+      else if (/\.(tish?|md|html|js)$/.test(name)) srcs.push(fs.readFileSync(p, 'utf8'))
     }
   }
   grab(path.join(root, 'pages')); grab(path.join(root, 'components')); grab(path.join(root, 'lib')); grab(path.join(root, 'islands'))
@@ -49,12 +49,12 @@ export async function buildIslands(root, staticDir) {
   if (!fs.existsSync(dir)) return manifest
   const out = path.join(staticDir, '_orbit', 'islands')
   fs.mkdirSync(out, { recursive: true })
-  fs.cpSync(dir, out, { recursive: true, filter: s => !/\.tishx?$/.test(s) })
+  fs.cpSync(dir, out, { recursive: true, filter: s => !/\.tish$/.test(s) })
   for (const name of fs.readdirSync(dir)) {
     const p = path.join(dir, name)
     if (fs.statSync(p).isDirectory() || name.startsWith('_')) continue
-    if (/\.tishx?$/.test(name)) {
-      const base = name.replace(/\.tishx?$/, '')
+    if (/\.tish$/.test(name)) {
+      const base = name.replace(/\.tish$/, '')
       const tmp = path.join(root, '.orbit', 'islands-build', base)
       fs.rmSync(tmp, { recursive: true, force: true })
       const { out: o } = await tish(root, ['build', p, '-o', tmp, '--target', 'js', '--format', 'esm'])

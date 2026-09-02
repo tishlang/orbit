@@ -1,9 +1,9 @@
-// File-based routes. pages/index.tishx -> "/", pages/blog/[slug].tishx -> "/blog/:slug",
-// pages/docs/[...path].tishx -> "/docs/*path". Built from the manifest the CLI generates.
+// File-based routes. pages/index.tish -> "/", pages/blog/[slug].tish -> "/blog/:slug",
+// pages/docs/[...path].tish -> "/docs/*path". Built from the manifest the CLI generates.
 
 export fn fileToRoute(file) {
-  // file is relative to pages/, e.g. "blog/[slug].tishx"
-  let p = file.replace(/\.(tishx?|md)$/, "")
+  // file is relative to pages/, e.g. "blog/[slug].tish"
+  let p = file.replace(/\.(tish?|md)$/, "")
   let segs = p.split("/").filter(s => s !== "")
   if (segs.length > 0 && segs[segs.length - 1] === "index") { segs.pop() }
   let params = []

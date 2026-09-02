@@ -10,7 +10,7 @@ Orbit renders **markdown** into pages with file-based routing.
 ## How it works
 
 - `content/` holds collections of markdown
-- `pages/` holds `.tishx` routes with JSX
+- `pages/` holds `.tish` routes with JSX
 - `islands/` holds client-side interactivity
 
 ```js
