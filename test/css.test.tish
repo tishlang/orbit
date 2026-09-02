@@ -1,7 +1,7 @@
 import { describe, it, expect } from "tish:test"
 import { compileClass, makeTheme, generate, extractClasses, tw } from "../src/css/engine.tish"
 
-let t = makeTheme({ colors: { brand: { "500": "#6366f1" } }, screens: { "3xl": "1800px" } })
+let t = makeTheme({ colors: { brand: { DEFAULT: "#123456", "500": "#6366f1" } }, screens: { "3xl": "1800px" } })
 fn rule(c) { let r = compileClass(c, t); return r === null ? null : r.rule }
 
 describe("css engine", () => {
@@ -15,6 +15,8 @@ describe("css engine", () => {
     expect(rule("text-2xl")).toBe(".text-2xl{font-size:1.5rem;line-height:2rem}")
     expect(rule("text-[13px]")).toBe(".text-\\[13px\\]{font-size:13px}")
     expect(rule("text-brand-500")).toBe(".text-brand-500{color:#6366f1}")
+    expect(rule("bg-brand")).toBe(".bg-brand{background-color:#123456}")
+    expect(rule("bg-brand/50")).toBe(".bg-brand\\/50{background-color:rgb(18 52 86 / 0.5)}")
     expect(rule("bg-red-500/50")).toBe(".bg-red-500\\/50{background-color:rgb(239 68 68 / 0.5)}")
     expect(rule("bg-[#0ff]")).toBe(".bg-\\[\\#0ff\\]{background-color:#0ff}")
     expect(rule("border-slate-200")).toBe(".border-slate-200{border-color:#e2e8f0}")

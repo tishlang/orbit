@@ -141,7 +141,8 @@ fn color(v, theme) {
       if (has(colors, hue) && typeof colors[hue] === "object" && has(colors[hue], shade)) { c = colors[hue][shade] }
     }
   }
-  if (c === null || typeof c === "object") { return null }
+  if (c !== null && typeof c === "object") { c = "DEFAULT" in c && c.DEFAULT !== null ? c.DEFAULT : null }
+  if (c === null) { return null }
   if (alpha === null) { return c }
   let pct = arbitrary(alpha) !== null ? arbitrary(alpha) : (parseFloat(alpha) / 100)
   if (typeof c === "string" && c.startsWith("#")) {
