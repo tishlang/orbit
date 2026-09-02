@@ -1,0 +1,90 @@
+// Date parsing/formatting that behaves identically on the Tish VM and the JS target.
+let MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+let MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+let DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+fn monthIndex(name) {
+  let n = name.slice(0, 3).toLowerCase()
+  let i = 0
+  while (i < 12) { if (MONTHS[i].toLowerCase() === n) { return i } i = i + 1 }
+  return -1
+}
+fn pad(n, w) { return String(n).padStart(w === null ? 2 : w, "0") }
+
+// Returns epoch ms (UTC) or null. Accepts ISO-8601 (date or datetime, Z or ±hh:mm),
+// RFC-1123 ("Wed, 03 Nov 2010 07:00:00 GMT"), "YYYY-MM", "YYYY", and numbers.
+export fn parseDate(v) {
+  if (v === null) { return null }
+  if (typeof v === "number") { return v }
+  let s = String(v).trim()
+  if (s === "") { return null }
+  let iso = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?\s*(Z|[+-]\d{2}:?\d{2})?$/.exec(s)
+  if (iso !== null) {
+    let y = parseInt(iso[1], 10)
+    let mo = iso[2] === null ? 0 : parseInt(iso[2], 10) - 1
+    let d = iso[3] === null ? 1 : parseInt(iso[3], 10)
+    let h = iso[4] === null ? 0 : parseInt(iso[4], 10)
+    let mi = iso[5] === null ? 0 : parseInt(iso[5], 10)
+    let se = iso[6] === null ? 0 : parseInt(iso[6], 10)
+    let ms = iso[7] === null ? 0 : parseInt(iso[7].padEnd(3, "0"), 10)
+    let t = Date.UTC(y, mo, d, h, mi, se, ms)
+    let tz = iso[8]
+    if (tz !== null && tz !== "Z") {
+      let sign = tz.charAt(0) === "-" ? -1 : 1
+      let digits = tz.slice(1).replace(":", "")
+      let off = (parseInt(digits.slice(0, 2), 10) * 60 + parseInt(digits.slice(2, 4), 10)) * 60000
+      t = t - sign * off
+    }
+    return t
+  }
+  let rfc = /^(?:[A-Za-z]{3},\s*)?(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?\s*(GMT|UTC|Z)?$/.exec(s)
+  if (rfc !== null) {
+    let mo = monthIndex(rfc[2])
+    if (mo < 0) { return null }
+    return Date.UTC(parseInt(rfc[3], 10), mo, parseInt(rfc[1], 10), rfc[4] === null ? 0 : parseInt(rfc[4], 10), rfc[5] === null ? 0 : parseInt(rfc[5], 10), rfc[6] === null ? 0 : parseInt(rfc[6], 10))
+  }
+  let us = /^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})$/.exec(s)
+  if (us !== null) {
+    let mo = monthIndex(us[1])
+    if (mo < 0) { return null }
+    return Date.UTC(parseInt(us[3], 10), mo, parseInt(us[2], 10))
+  }
+  return null
+}
+
+fn parts(t) {
+  let d = new Date(t)
+  return { y: d.getUTCFullYear(), mo: d.getUTCMonth(), d: d.getUTCDate(), h: d.getUTCHours(), mi: d.getUTCMinutes(), s: d.getUTCSeconds(), wd: d.getUTCDay() }
+}
+export fn toISO(t) {
+  let p = parts(t)
+  return p.y + "-" + pad(p.mo + 1, 2) + "-" + pad(p.d, 2) + "T" + pad(p.h, 2) + ":" + pad(p.mi, 2) + ":" + pad(p.s, 2) + "Z"
+}
+export fn toISODate(t) {
+  let p = parts(t)
+  return p.y + "-" + pad(p.mo + 1, 2) + "-" + pad(p.d, 2)
+}
+export fn toRFC822(t) {
+  let p = parts(t)
+  return DAYS[p.wd] + ", " + pad(p.d, 2) + " " + MONTHS[p.mo] + " " + p.y + " " + pad(p.h, 2) + ":" + pad(p.mi, 2) + ":" + pad(p.s, 2) + " GMT"
+}
+// format(t, "MMM d, yyyy") — tokens: yyyy yy MMMM MMM MM M dd d HH mm ss
+export fn formatDate(t, fmt) {
+  if (t === null) { return "" }
+  let p = parts(t)
+  let f = fmt === null ? "MMM d, yyyy" : fmt
+  return f.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d|HH|mm|ss/g, (tok) => {
+    if (tok === "yyyy") { return String(p.y) }
+    if (tok === "yy") { return String(p.y).slice(2) }
+    if (tok === "MMMM") { return MONTHS_LONG[p.mo] }
+    if (tok === "MMM") { return MONTHS[p.mo] }
+    if (tok === "MM") { return pad(p.mo + 1, 2) }
+    if (tok === "M") { return String(p.mo + 1) }
+    if (tok === "dd") { return pad(p.d, 2) }
+    if (tok === "d") { return String(p.d) }
+    if (tok === "HH") { return pad(p.h, 2) }
+    if (tok === "mm") { return pad(p.mi, 2) }
+    return pad(p.s, 2)
+  })
+}
+export fn yearOf(t) { return parts(t).y }

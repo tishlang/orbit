@@ -1,0 +1,24 @@
+export fn escapeHtml(s) {
+  if (s === null) { return "" }
+  let t = typeof s === "string" ? s : String(s)
+  return t.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;")
+}
+export fn escapeAttr(s) { return escapeHtml(s) }
+export fn escapeXml(s) { return escapeHtml(s) }
+export fn slugify(s) {
+  if (s === null) { return "" }
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+}
+export fn stripTags(html) {
+  if (html === null) { return "" }
+  return html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
+}
+export fn truncate(s, n) {
+  if (s === null) { return "" }
+  if (s.length <= n) { return s }
+  let cut = s.slice(0, n)
+  let sp = cut.lastIndexOf(" ")
+  if (sp > n * 0.6) { cut = cut.slice(0, sp) }
+  return cut + "…"
+}
+export fn excerpt(html, n) { return truncate(stripTags(html), n === null ? 160 : n) }

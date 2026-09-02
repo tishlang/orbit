@@ -1,0 +1,6 @@
+node_modules
+.orbit
+.vercel
+templates/*/node_modules
+templates/*/.orbit
+templates/*/.vercel

@@ -1,0 +1,46 @@
+import { describe, it, expect } from "tish:test"
+import { compileClass, makeTheme, generate, extractClasses, tw } from "../src/css/engine.tish"
+
+let t = makeTheme({ colors: { brand: { "500": "#6366f1" } }, screens: { "3xl": "1800px" } })
+fn rule(c) { let r = compileClass(c, t); return r === null ? null : r.rule }
+
+describe("css engine", () => {
+  it("compiles spacing, sizing, typography, colors", () => {
+    expect(rule("p-4")).toBe(".p-4{padding:1rem}")
+    expect(rule("-mt-2")).toBe(".-mt-2{margin-top:-0.5rem}")
+    expect(rule("px-3")).toBe(".px-3{padding-left:0.75rem;padding-right:0.75rem}")
+    expect(rule("w-1/2")).toBe(".w-1\\/2{width:50%}")
+    expect(rule("w-[42px]")).toBe(".w-\\[42px\\]{width:42px}")
+    expect(rule("max-w-prose")).toBe(".max-w-prose{max-width:65ch}")
+    expect(rule("text-2xl")).toBe(".text-2xl{font-size:1.5rem;line-height:2rem}")
+    expect(rule("text-[13px]")).toBe(".text-\\[13px\\]{font-size:13px}")
+    expect(rule("text-brand-500")).toBe(".text-brand-500{color:#6366f1}")
+    expect(rule("bg-red-500/50")).toBe(".bg-red-500\\/50{background-color:rgb(239 68 68 / 0.5)}")
+    expect(rule("bg-[#0ff]")).toBe(".bg-\\[\\#0ff\\]{background-color:#0ff}")
+    expect(rule("border-slate-200")).toBe(".border-slate-200{border-color:#e2e8f0}")
+    expect(rule("border-t-2")).toBe(".border-t-2{border-top-width:2px}")
+    expect(rule("rounded-tl-lg")).toBe(".rounded-tl-lg{border-top-left-radius:0.5rem}")
+    expect(rule("grid-cols-3")).toBe(".grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}")
+    expect(rule("font-bold")).toBe(".font-bold{font-weight:700}")
+    expect(rule("mix-blend-difference")).toBe(".mix-blend-difference{mix-blend-mode:difference}")
+    expect(rule("nonsense-xyz")).toBeNull()
+  })
+  it("compiles variants", () => {
+    expect(rule("hover:text-brand-500")).toBe(".hover\\:text-brand-500:hover{color:#6366f1}")
+    expect(rule("md:flex")).toBe("@media (min-width: 768px){.md\\:flex{display:flex}}")
+    expect(rule("3xl:flex")).toBe("@media (min-width: 1800px){.3xl\\:flex{display:flex}}")
+    expect(rule("dark:bg-black")).toBe("@media (prefers-color-scheme: dark){.dark\\:bg-black{background-color:#000}}")
+    expect(rule("group-hover:opacity-50")).toBe(".group:hover .group-hover\\:opacity-50{opacity:0.5}")
+    expect(rule("motion-reduce:animate-none")).toBe("@media (prefers-reduced-motion: reduce){.motion-reduce\\:animate-none{animation:none}}")
+    expect(rule("md:hover:underline")).toBe("@media (min-width: 768px){.md\\:hover\\:underline:hover{text-decoration-line:underline}}")
+    expect(rule("space-y-4")).toBe(".space-y-4 > :not([hidden]) ~ :not([hidden]){margin-top:1rem}")
+  })
+  it("extracts and generates ordered css with keyframes", () => {
+    let css = generate(['<div class="animate-spin md:p-2 p-1 hover:p-3">'], null, false)
+    expect(css.indexOf("@keyframes spin")).toBe(0)
+    expect(css.indexOf(".p-1{") < css.indexOf(".hover")).toBe(true)
+    expect(css.indexOf(".hover") < css.indexOf("@media (min-width: 768px)")).toBe(true)
+    expect(extractClasses("x -mt-2 y").indexOf("-mt-2") >= 0).toBe(true)
+    expect(tw("a", null, false, ["b", "c"], "")).toBe("a b c")
+  })
+})

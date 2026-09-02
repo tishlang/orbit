@@ -1,0 +1,30 @@
+{
+  "name": "@tishlang/orbit",
+  "version": "0.1.0",
+  "description": "Hybrid (SSG / SSR / ISR) markdown-first web framework written in Tish. File-based routing, layouts, Tailwind, SEO, islands, Vercel Build Output.",
+  "type": "module",
+  "license": "MIT",
+  "tish": { "module": "./src/main.tish" },
+  "bin": { "orbit": "./bin/orbit.mjs" },
+  "exports": {
+    ".": { "tish": "./src/main.tish" },
+    "./runtime": { "tish": "./src/runtime/host.tish" },
+    "./runtime-node": "./src/runtime/node-host.mjs",
+    "./server-node": "./src/server/node-server.mjs",
+    "./client/*": "./src/client/*",
+    "./package.json": "./package.json"
+  },
+  "files": ["src", "bin", "templates", "README.md"],
+  "scripts": {
+    "test": "node test/run.mjs"
+  },
+  "dependencies": {
+    "@schlopai/tish-dark-matter": "latest",
+    "@tishlang/tish-tailwind": "latest",
+    "@tishlang/tishdoc-parse": "latest",
+    "@tishlang/tishdoc-render-html": "latest"
+  },
+  "peerDependencies": { "@tishlang/tish": ">=3.10.11" },
+  "devDependencies": { "@tishlang/tish": "^3.10.11" },
+  "publishConfig": { "access": "public" }
+}

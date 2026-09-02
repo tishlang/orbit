@@ -1,0 +1,33 @@
+import { raw, articleLd, formatDate } from "@tishlang/orbit"
+
+// Incremental static regeneration: prerendered at build, re-rendered on demand after 1h.
+export let render = "isr"
+export let revalidate = 3600
+
+export fn paths(ctx) { return ctx.collections.blog.map(p => ({ params: { slug: p.slug } })) }
+
+export async fn load(ctx) {
+  let post = ctx.bySlug(ctx.collections.blog, ctx.params.slug)
+  if (post === null) { return { notFound: true } }
+  return { props: { post: post } }
+}
+
+export fn head(ctx, props) {
+  let p = props.post
+  return { title: p.title, description: p.excerpt, type: "article", published: p.date, tags: p.tags, jsonLd: articleLd(ctx.site, p, p.url) }
+}
+
+export fn page(ctx, props) {
+  let p = props.post
+  return (
+    <article class="prose max-w-prose">
+      <h1 class="text-3xl font-bold">{p.title}</h1>
+      <p class="text-sm text-slate-500 mb-6">{formatDate(p.time, "MMMM d, yyyy") + " \u00b7 " + p.tags.join(", ")}</p>
+      {raw(p.html)}
+      <nav class="mt-10 flex justify-between text-sm">
+        {p.prev !== null ? <a href={p.prev.url}>{"\u2190 " + p.prev.title}</a> : <span></span>}
+        {p.next !== null ? <a href={p.next.url}>{p.next.title + " \u2192"}</a> : <span></span>}
+      </nav>
+    </article>
+  )
+}

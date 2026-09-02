@@ -1,0 +1,470 @@
+// Generative Tailwind-style utility engine (pure Tish; no dependencies).
+// generate(classes, theme) -> css string. Supports variants (sm..2xl, hover, focus,
+// active, group-hover, dark, first, last, odd, even, motion-reduce, motion-safe,
+// placeholder, before/after) and arbitrary values (`w-[42px]`, `bg-[#0ff]`, `text-[1.1rem]`).
+import { defaultColors } from "./palette.tish"
+
+let SPACING = { px: "1px", "0": "0px", "0.5": "0.125rem", "1": "0.25rem", "1.5": "0.375rem", "2": "0.5rem", "2.5": "0.625rem", "3": "0.75rem", "3.5": "0.875rem", "4": "1rem", "5": "1.25rem", "6": "1.5rem", "7": "1.75rem", "8": "2rem", "9": "2.25rem", "10": "2.5rem", "11": "2.75rem", "12": "3rem", "14": "3.5rem", "16": "4rem", "20": "5rem", "24": "6rem", "28": "7rem", "32": "8rem", "36": "9rem", "40": "10rem", "44": "11rem", "48": "12rem", "52": "13rem", "56": "14rem", "60": "15rem", "64": "16rem", "72": "18rem", "80": "20rem", "96": "24rem" }
+let FRACTIONS = { "1/2": "50%", "1/3": "33.333333%", "2/3": "66.666667%", "1/4": "25%", "2/4": "50%", "3/4": "75%", "1/5": "20%", "2/5": "40%", "3/5": "60%", "4/5": "80%", "1/6": "16.666667%", "5/6": "83.333333%", "1/12": "8.333333%", "5/12": "41.666667%", "7/12": "58.333333%", "11/12": "91.666667%", full: "100%", screen: "100vw", min: "min-content", max: "max-content", fit: "fit-content", auto: "auto" }
+let TEXT = { xs: ["0.75rem", "1rem"], sm: ["0.875rem", "1.25rem"], base: ["1rem", "1.5rem"], lg: ["1.125rem", "1.75rem"], xl: ["1.25rem", "1.75rem"] }
+TEXT["2xl"] = ["1.5rem", "2rem"]
+TEXT["3xl"] = ["1.875rem", "2.25rem"]
+TEXT["4xl"] = ["2.25rem", "2.5rem"]
+TEXT["5xl"] = ["3rem", "1"]
+TEXT["6xl"] = ["3.75rem", "1"]
+TEXT["7xl"] = ["4.5rem", "1"]
+TEXT["8xl"] = ["6rem", "1"]
+TEXT["9xl"] = ["8rem", "1"]
+let WEIGHT = { thin: 100, extralight: 200, light: 300, normal: 400, medium: 500, semibold: 600, bold: 700, extrabold: 800, black: 900 }
+let LEADING = { none: "1", tight: "1.25", snug: "1.375", normal: "1.5", relaxed: "1.625", loose: "2", "3": ".75rem", "4": "1rem", "5": "1.25rem", "6": "1.5rem", "7": "1.75rem", "8": "2rem", "9": "2.25rem", "10": "2.5rem" }
+let TRACKING = { tighter: "-0.05em", tight: "-0.025em", normal: "0em", wide: "0.025em", wider: "0.05em", widest: "0.1em" }
+let ROUNDED = { none: "0px", sm: "0.125rem", DEFAULT: "0.25rem", md: "0.375rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" }
+ROUNDED["2xl"] = "1rem"
+ROUNDED["3xl"] = "1.5rem"
+let SHADOW = { sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)", DEFAULT: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)", md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)", xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)", inner: "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)", none: "0 0 #0000" }
+SHADOW["2xl"] = "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+let MAXW = { none: "none", xs: "20rem", sm: "24rem", md: "28rem", lg: "32rem", xl: "36rem", full: "100%", prose: "65ch", "screen-sm": "640px", "screen-md": "768px", "screen-lg": "1024px", "screen-xl": "1280px", "screen-2xl": "1536px" }
+MAXW["2xl"] = "42rem"
+MAXW["3xl"] = "48rem"
+MAXW["4xl"] = "56rem"
+MAXW["5xl"] = "64rem"
+MAXW["6xl"] = "72rem"
+MAXW["7xl"] = "80rem"
+let BLUR = { none: "0", sm: "4px", DEFAULT: "8px", md: "12px", lg: "16px", xl: "24px" }
+BLUR["2xl"] = "40px"
+BLUR["3xl"] = "64px"
+let SCREENS = { sm: "640px", md: "768px", lg: "1024px", xl: "1280px" }
+SCREENS["2xl"] = "1536px"
+let DURATION = { "0": "0s", "75": "75ms", "100": "100ms", "150": "150ms", "200": "200ms", "300": "300ms", "500": "500ms", "700": "700ms", "1000": "1000ms" }
+let EASE = { linear: "linear", "in": "cubic-bezier(0.4, 0, 1, 1)", out: "cubic-bezier(0, 0, 0.2, 1)", "in-out": "cubic-bezier(0.4, 0, 0.2, 1)" }
+let STATIC = {
+  block: "display:block", "inline-block": "display:inline-block", inline: "display:inline", flex: "display:flex", "inline-flex": "display:inline-flex", grid: "display:grid", "inline-grid": "display:inline-grid", contents: "display:contents", hidden: "display:none", table: "display:table",
+  static: "position:static", fixed: "position:fixed", absolute: "position:absolute", relative: "position:relative", sticky: "position:sticky",
+  "flex-row": "flex-direction:row", "flex-row-reverse": "flex-direction:row-reverse", "flex-col": "flex-direction:column", "flex-col-reverse": "flex-direction:column-reverse",
+  "flex-wrap": "flex-wrap:wrap", "flex-nowrap": "flex-wrap:nowrap", "flex-wrap-reverse": "flex-wrap:wrap-reverse",
+  "flex-1": "flex:1 1 0%", "flex-auto": "flex:1 1 auto", "flex-initial": "flex:0 1 auto", "flex-none": "flex:none", grow: "flex-grow:1", "grow-0": "flex-grow:0", shrink: "flex-shrink:1", "shrink-0": "flex-shrink:0",
+  "items-start": "align-items:flex-start", "items-end": "align-items:flex-end", "items-center": "align-items:center", "items-baseline": "align-items:baseline", "items-stretch": "align-items:stretch",
+  "justify-start": "justify-content:flex-start", "justify-end": "justify-content:flex-end", "justify-center": "justify-content:center", "justify-between": "justify-content:space-between", "justify-around": "justify-content:space-around", "justify-evenly": "justify-content:space-evenly",
+  "self-start": "align-self:flex-start", "self-end": "align-self:flex-end", "self-center": "align-self:center", "self-stretch": "align-self:stretch", "self-auto": "align-self:auto",
+  "content-center": "align-content:center", "content-start": "align-content:flex-start", "content-end": "align-content:flex-end", "content-between": "align-content:space-between",
+  "place-items-center": "place-items:center", "place-content-center": "place-content:center",
+  "text-left": "text-align:left", "text-center": "text-align:center", "text-right": "text-align:right", "text-justify": "text-align:justify",
+  underline: "text-decoration-line:underline", "line-through": "text-decoration-line:line-through", "no-underline": "text-decoration-line:none", "underline-offset-2": "text-underline-offset:2px", "underline-offset-4": "text-underline-offset:4px", "decoration-1": "text-decoration-thickness:1px", "decoration-2": "text-decoration-thickness:2px",
+  uppercase: "text-transform:uppercase", lowercase: "text-transform:lowercase", capitalize: "text-transform:capitalize", "normal-case": "text-transform:none",
+  italic: "font-style:italic", "not-italic": "font-style:normal", antialiased: "-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale",
+  truncate: "overflow:hidden;text-overflow:ellipsis;white-space:nowrap", "text-ellipsis": "text-overflow:ellipsis", "text-clip": "text-overflow:clip",
+  "whitespace-normal": "white-space:normal", "whitespace-nowrap": "white-space:nowrap", "whitespace-pre": "white-space:pre", "whitespace-pre-wrap": "white-space:pre-wrap", "whitespace-pre-line": "white-space:pre-line",
+  "break-words": "overflow-wrap:break-word", "break-all": "word-break:break-all", "text-balance": "text-wrap:balance", "text-pretty": "text-wrap:pretty",
+  "overflow-hidden": "overflow:hidden", "overflow-auto": "overflow:auto", "overflow-scroll": "overflow:scroll", "overflow-visible": "overflow:visible", "overflow-x-auto": "overflow-x:auto", "overflow-y-auto": "overflow-y:auto", "overflow-x-hidden": "overflow-x:hidden", "overflow-y-hidden": "overflow-y:hidden", "overflow-y-scroll": "overflow-y:scroll",
+  "pointer-events-none": "pointer-events:none", "pointer-events-auto": "pointer-events:auto", "select-none": "user-select:none", "select-text": "user-select:text", "select-all": "user-select:all",
+  "cursor-pointer": "cursor:pointer", "cursor-default": "cursor:default", "cursor-none": "cursor:none", "cursor-not-allowed": "cursor:not-allowed", "cursor-grab": "cursor:grab", "cursor-crosshair": "cursor:crosshair",
+  "sr-only": "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0",
+  "not-sr-only": "position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip:auto;white-space:normal",
+  visible: "visibility:visible", invisible: "visibility:hidden", collapse: "visibility:collapse",
+  "box-border": "box-sizing:border-box", "box-content": "box-sizing:content-box",
+  "object-cover": "object-fit:cover", "object-contain": "object-fit:contain", "object-fill": "object-fit:fill", "object-center": "object-position:center", "object-top": "object-position:top", "object-bottom": "object-position:bottom",
+  "bg-cover": "background-size:cover", "bg-contain": "background-size:contain", "bg-center": "background-position:center", "bg-top": "background-position:top", "bg-bottom": "background-position:bottom", "bg-no-repeat": "background-repeat:no-repeat", "bg-fixed": "background-attachment:fixed", "bg-transparent": "background-color:transparent",
+  "border-solid": "border-style:solid", "border-dashed": "border-style:dashed", "border-dotted": "border-style:dotted", "border-none": "border-style:none",
+  "outline-none": "outline:2px solid transparent;outline-offset:2px", "appearance-none": "appearance:none",
+  "list-none": "list-style-type:none", "list-disc": "list-style-type:disc", "list-decimal": "list-style-type:decimal", "list-inside": "list-style-position:inside", "list-outside": "list-style-position:outside",
+  "table-auto": "table-layout:auto", "table-fixed": "table-layout:fixed", "border-collapse": "border-collapse:collapse",
+  "align-top": "vertical-align:top", "align-middle": "vertical-align:middle", "align-bottom": "vertical-align:bottom", "align-baseline": "vertical-align:baseline",
+  "mix-blend-difference": "mix-blend-mode:difference", "mix-blend-multiply": "mix-blend-mode:multiply", "mix-blend-screen": "mix-blend-mode:screen", "mix-blend-overlay": "mix-blend-mode:overlay", "mix-blend-normal": "mix-blend-mode:normal", "mix-blend-exclusion": "mix-blend-mode:exclusion", "mix-blend-lighten": "mix-blend-mode:lighten", "mix-blend-darken": "mix-blend-mode:darken",
+  isolate: "isolation:isolate", "isolation-auto": "isolation:auto",
+  "transition-none": "transition-property:none",
+  "transition": "transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-timing-function:cubic-bezier(0.4,0,0.2,1);transition-duration:150ms",
+  "transition-all": "transition-property:all;transition-timing-function:cubic-bezier(0.4,0,0.2,1);transition-duration:150ms",
+  "transition-colors": "transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(0.4,0,0.2,1);transition-duration:150ms",
+  "transition-opacity": "transition-property:opacity;transition-timing-function:cubic-bezier(0.4,0,0.2,1);transition-duration:150ms",
+  "transition-transform": "transition-property:transform;transition-timing-function:cubic-bezier(0.4,0,0.2,1);transition-duration:150ms",
+  "transition-shadow": "transition-property:box-shadow;transition-timing-function:cubic-bezier(0.4,0,0.2,1);transition-duration:150ms",
+  "will-change-transform": "will-change:transform", "backface-hidden": "backface-visibility:hidden",
+  "transform-gpu": "transform:translate3d(0,0,0)", "transform-none": "transform:none",
+  "origin-center": "transform-origin:center", "origin-top": "transform-origin:top", "origin-bottom": "transform-origin:bottom", "origin-left": "transform-origin:left", "origin-right": "transform-origin:right", "origin-top-left": "transform-origin:top left",
+  "animate-none": "animation:none", "animate-spin": "animation:spin 1s linear infinite", "animate-ping": "animation:ping 1s cubic-bezier(0,0,0.2,1) infinite", "animate-pulse": "animation:pulse 2s cubic-bezier(0.4,0,0.6,1) infinite", "animate-bounce": "animation:bounce 1s infinite",
+  "grid-flow-row": "grid-auto-flow:row", "grid-flow-col": "grid-auto-flow:column", "grid-flow-dense": "grid-auto-flow:dense",
+  "col-auto": "grid-column:auto", "col-span-full": "grid-column:1 / -1", "row-span-full": "grid-row:1 / -1",
+  "w-screen": "width:100vw", "h-screen": "height:100vh", "min-h-screen": "min-height:100vh", "h-dvh": "height:100dvh", "min-h-dvh": "min-height:100dvh", "h-svh": "height:100svh", "min-h-full": "min-height:100%", "min-w-full": "min-width:100%", "min-w-0": "min-width:0px", "min-h-0": "min-height:0px", "max-h-screen": "max-height:100vh", "max-w-none": "max-width:none",
+  "container": "width:100%;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem;max-width:80rem",
+  "font-sans": "font-family:var(--font-sans,ui-sans-serif,system-ui,sans-serif)", "font-serif": "font-family:var(--font-serif,ui-serif,Georgia,serif)", "font-mono": "font-family:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace)", "font-display": "font-family:var(--font-display,var(--font-sans,system-ui,sans-serif))",
+  "tabular-nums": "font-variant-numeric:tabular-nums", "ordinal": "font-variant-numeric:ordinal",
+  "scroll-smooth": "scroll-behavior:smooth", "snap-x": "scroll-snap-type:x mandatory", "snap-start": "scroll-snap-align:start", "snap-center": "scroll-snap-align:center", "overscroll-contain": "overscroll-behavior:contain",
+  "resize-none": "resize:none", "resize": "resize:both",
+  "fill-current": "fill:currentColor", "stroke-current": "stroke:currentColor", "fill-none": "fill:none", "stroke-none": "stroke:none",
+  "backdrop-blur": "backdrop-filter:blur(8px)", "blur": "filter:blur(8px)", "grayscale": "filter:grayscale(100%)", "invert": "filter:invert(100%)", "filter-none": "filter:none",
+  "aspect-square": "aspect-ratio:1 / 1", "aspect-video": "aspect-ratio:16 / 9", "aspect-auto": "aspect-ratio:auto",
+  "divide-y": "& > :not([hidden]) ~ :not([hidden]){border-top-width:1px}", "divide-x": "& > :not([hidden]) ~ :not([hidden]){border-left-width:1px}",
+  "space-y-0": "& > :not([hidden]) ~ :not([hidden]){margin-top:0px}", "space-x-0": "& > :not([hidden]) ~ :not([hidden]){margin-left:0px}"
+}
+let KEYFRAMES = {
+  spin: "@keyframes spin{to{transform:rotate(360deg)}}",
+  ping: "@keyframes ping{75%,100%{transform:scale(2);opacity:0}}",
+  pulse: "@keyframes pulse{50%{opacity:.5}}",
+  bounce: "@keyframes bounce{0%,100%{transform:translateY(-25%);animation-timing-function:cubic-bezier(0.8,0,1,1)}50%{transform:none;animation-timing-function:cubic-bezier(0,0,0.2,1)}}"
+}
+let SIDES = { t: ["top"], r: ["right"], b: ["bottom"], l: ["left"], x: ["left", "right"], y: ["top", "bottom"], s: ["inline-start"], e: ["inline-end"] }
+let CORNERS = { t: ["top-left", "top-right"], r: ["top-right", "bottom-right"], b: ["bottom-right", "bottom-left"], l: ["top-left", "bottom-left"], tl: ["top-left"], tr: ["top-right"], br: ["bottom-right"], bl: ["bottom-left"] }
+
+fn esc(cls) { return cls.replace(/([^A-Za-z0-9_-])/g, "\\$1") }
+fn has(o, k) { return o !== null && k in o && o[k] !== null }
+fn arbitrary(v) {
+  if (v === null) { return null }
+  if (v.startsWith("[") && v.endsWith("]")) { return v.slice(1, v.length - 1).replaceAll("_", " ") }
+  return null
+}
+fn spacing(v, theme) {
+  let a = arbitrary(v)
+  if (a !== null) { return a }
+  if (has(theme.spacing, v)) { return theme.spacing[v] }
+  if (v in SPACING) { return SPACING[v] }
+  if (v in FRACTIONS) { return FRACTIONS[v] }
+  if (/^\d+(\.\d+)?$/.test(v)) { return (parseFloat(v) * 0.25) + "rem" }
+  return null
+}
+// Resolve "blue-500", "blue-500/50", "white", "[#0ff]", "primary" -> css color
+fn color(v, theme) {
+  if (v === null) { return null }
+  let a = arbitrary(v)
+  if (a !== null) { return a }
+  let alpha = null
+  let name = v
+  let si = v.lastIndexOf("/")
+  if (si > 0) { alpha = v.slice(si + 1); name = v.slice(0, si) }
+  let colors = theme.colors
+  let c = null
+  if (has(colors, name)) { c = colors[name] }
+  else {
+    let di = name.lastIndexOf("-")
+    if (di > 0) {
+      let hue = name.slice(0, di)
+      let shade = name.slice(di + 1)
+      if (has(colors, hue) && typeof colors[hue] === "object" && has(colors[hue], shade)) { c = colors[hue][shade] }
+    }
+  }
+  if (c === null || typeof c === "object") { return null }
+  if (alpha === null) { return c }
+  let pct = arbitrary(alpha) !== null ? arbitrary(alpha) : (parseFloat(alpha) / 100)
+  if (typeof c === "string" && c.startsWith("#")) {
+    let hex = c.slice(1)
+    if (hex.length === 3) { hex = hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2) }
+    let r = parseInt(hex.slice(0, 2), 16)
+    let g = parseInt(hex.slice(2, 4), 16)
+    let b = parseInt(hex.slice(4, 6), 16)
+    return "rgb(" + r + " " + g + " " + b + " / " + pct + ")"
+  }
+  return "color-mix(in srgb, " + c + " " + (pct * 100) + "%, transparent)"
+}
+
+// Returns css declarations (string) for one bare utility, or null.
+fn utility(u, theme) {
+  if (u in STATIC) { return STATIC[u] }
+  let neg = false
+  let s = u
+  if (s.startsWith("-")) { neg = true; s = s.slice(1) }
+  let m = /^([a-z]+(?:-[a-z]+)*?)-(.+)$/.exec(s)
+  let key = m === null ? s : m[1]
+  let val = m === null ? null : m[2]
+  // Try longest prefix matches first for multi-word keys
+  let candidates = []
+  if (m !== null) {
+    let parts = s.split("-")
+    let i = parts.length - 1
+    while (i >= 1) { candidates.push([parts.slice(0, i).join("-"), parts.slice(i).join("-")]); i = i - 1 }
+  }
+  for (let c of candidates) {
+    let r = utilityKV(c[0], c[1], neg, theme)
+    if (r !== null) { return r }
+  }
+  return utilityKV(key, val, neg, theme)
+}
+fn n(v, neg) { return neg ? "-" + v : v }
+fn utilityKV(key, val, neg, theme) {
+  if (val === null) {
+    if (key === "border") { return "border-width:1px" }
+    if (key === "rounded") { return "border-radius:" + ROUNDED.DEFAULT }
+    if (key === "shadow") { return "box-shadow:" + SHADOW.DEFAULT }
+    if (key === "ring") { return "box-shadow:0 0 0 3px rgb(59 130 246 / 0.5)" }
+    if (key === "blur") { return "filter:blur(8px)" }
+    return null
+  }
+  let sp = spacing(val, theme)
+  let arb = arbitrary(val)
+  // spacing families
+  if (key === "p" && sp !== null) { return "padding:" + sp }
+  if (key === "m" && (sp !== null || val === "auto")) { return "margin:" + (val === "auto" ? "auto" : n(sp, neg)) }
+  if (key.length === 2 && (key.charAt(0) === "p" || key.charAt(0) === "m") && key.charAt(1) in SIDES) {
+    let prop = key.charAt(0) === "p" ? "padding" : "margin"
+    let v = val === "auto" ? "auto" : (sp === null ? null : n(sp, neg))
+    if (v === null) { return null }
+    return SIDES[key.charAt(1)].map(side => prop + "-" + side + ":" + v).join(";")
+  }
+  if (key === "gap" && sp !== null) { return "gap:" + sp }
+  if (key === "gap-x" && sp !== null) { return "column-gap:" + sp }
+  if (key === "gap-y" && sp !== null) { return "row-gap:" + sp }
+  if (key === "space-x" && sp !== null) { return "& > :not([hidden]) ~ :not([hidden]){margin-left:" + n(sp, neg) + "}" }
+  if (key === "space-y" && sp !== null) { return "& > :not([hidden]) ~ :not([hidden]){margin-top:" + n(sp, neg) + "}" }
+  if (key === "w" && sp !== null) { return "width:" + sp }
+  if (key === "h" && sp !== null) { return "height:" + sp }
+  if (key === "size" && sp !== null) { return "width:" + sp + ";height:" + sp }
+  if (key === "min-w" && sp !== null) { return "min-width:" + sp }
+  if (key === "min-h" && sp !== null) { return "min-height:" + sp }
+  if (key === "max-h" && sp !== null) { return "max-height:" + sp }
+  if (key === "max-w") { if (val in MAXW) { return "max-width:" + MAXW[val] } if (sp !== null) { return "max-width:" + sp } }
+  if ((key === "inset" || key === "top" || key === "right" || key === "bottom" || key === "left" || key === "start" || key === "end") && (sp !== null || val === "auto")) {
+    let v = val === "auto" ? "auto" : n(sp, neg)
+    if (key === "inset") { return "inset:" + v }
+    if (key === "start") { return "inset-inline-start:" + v }
+    if (key === "end") { return "inset-inline-end:" + v }
+    return key + ":" + v
+  }
+  if (key === "inset-x" && sp !== null) { return "left:" + n(sp, neg) + ";right:" + n(sp, neg) }
+  if (key === "inset-y" && sp !== null) { return "top:" + n(sp, neg) + ";bottom:" + n(sp, neg) }
+  if (key === "translate-x" && sp !== null) { return "--tw-tx:" + n(sp, neg) + ";transform:translate(var(--tw-tx,0),var(--tw-ty,0)) rotate(var(--tw-r,0)) scale(var(--tw-s,1))" }
+  if (key === "translate-y" && sp !== null) { return "--tw-ty:" + n(sp, neg) + ";transform:translate(var(--tw-tx,0),var(--tw-ty,0)) rotate(var(--tw-r,0)) scale(var(--tw-s,1))" }
+  if (key === "rotate") { let d = arb !== null ? arb : val + "deg"; return "--tw-r:" + n(d, neg) + ";transform:translate(var(--tw-tx,0),var(--tw-ty,0)) rotate(var(--tw-r,0)) scale(var(--tw-s,1))" }
+  if (key === "scale") { let d = arb !== null ? arb : String(parseFloat(val) / 100); return "--tw-s:" + d + ";transform:translate(var(--tw-tx,0),var(--tw-ty,0)) rotate(var(--tw-r,0)) scale(var(--tw-s,1))" }
+  if (key === "z") { return "z-index:" + (arb !== null ? arb : n(val, neg)) }
+  if (key === "order") { return "order:" + (val === "first" ? "-9999" : (val === "last" ? "9999" : n(val, neg))) }
+  if (key === "opacity") { return "opacity:" + (arb !== null ? arb : String(parseFloat(val) / 100)) }
+  // typography
+  if (key === "text") {
+    if (arb !== null && /^(\d|\.|clamp|calc|min\(|max\()/.test(arb)) { return "font-size:" + arb }
+    if (val in TEXT) { return "font-size:" + TEXT[val][0] + ";line-height:" + TEXT[val][1] }
+    let c = color(val, theme)
+    if (c !== null) { return "color:" + c }
+    if (arb !== null) { return "font-size:" + arb }
+  }
+  if (key === "font") {
+    if (val in WEIGHT) { return "font-weight:" + WEIGHT[val] }
+    if (has(theme.fonts, val)) { return "font-family:" + theme.fonts[val] }
+    if (arb !== null) { return "font-family:" + arb }
+  }
+  if (key === "leading") { if (val in LEADING) { return "line-height:" + LEADING[val] } if (arb !== null) { return "line-height:" + arb } }
+  if (key === "tracking") { if (val in TRACKING) { return "letter-spacing:" + TRACKING[val] } if (arb !== null) { return "letter-spacing:" + arb } }
+  if (key === "line-clamp") { return "overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:" + val }
+  if (key === "indent" && sp !== null) { return "text-indent:" + sp }
+  if (key === "decoration") { let c = color(val, theme); if (c !== null) { return "text-decoration-color:" + c } }
+  if (key === "placeholder") { let c = color(val, theme); if (c !== null) { return "&::placeholder{color:" + c + "}" } }
+  if (key === "list") { if (arb !== null) { return "list-style-type:" + arb } }
+  // colors
+  if (key === "bg") {
+    let c = color(val, theme)
+    if (c !== null) { return "background-color:" + c }
+    if (arb !== null) { return "background:" + arb }
+    if (val === "gradient-to-r") { return "background-image:linear-gradient(to right, var(--tw-gradient-stops))" }
+    if (val === "gradient-to-l") { return "background-image:linear-gradient(to left, var(--tw-gradient-stops))" }
+    if (val === "gradient-to-t") { return "background-image:linear-gradient(to top, var(--tw-gradient-stops))" }
+    if (val === "gradient-to-b") { return "background-image:linear-gradient(to bottom, var(--tw-gradient-stops))" }
+    if (val === "gradient-to-br") { return "background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))" }
+    if (val === "gradient-to-tr") { return "background-image:linear-gradient(to top right, var(--tw-gradient-stops))" }
+  }
+  if (key === "from") { let c = color(val, theme); if (c !== null) { return "--tw-gradient-from:" + c + ";--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to,transparent)" } }
+  if (key === "via") { let c = color(val, theme); if (c !== null) { return "--tw-gradient-stops:var(--tw-gradient-from),"+ c + ",var(--tw-gradient-to,transparent)" } }
+  if (key === "to") { let c = color(val, theme); if (c !== null) { return "--tw-gradient-to:" + c } }
+  if (key === "fill") { let c = color(val, theme); if (c !== null) { return "fill:" + c } }
+  if (key === "stroke") { let c = color(val, theme); if (c !== null) { return "stroke:" + c } if (/^\d+$/.test(val)) { return "stroke-width:" + val } }
+  if (key === "accent") { let c = color(val, theme); if (c !== null) { return "accent-color:" + c } }
+  if (key === "caret") { let c = color(val, theme); if (c !== null) { return "caret-color:" + c } }
+  if (key === "outline") { let c = color(val, theme); if (c !== null) { return "outline-color:" + c } if (/^\d+$/.test(val)) { return "outline-width:" + val + "px" } }
+  if (key === "ring") { let c = color(val, theme); if (c !== null) { return "--tw-ring-color:" + c + ";box-shadow:0 0 0 var(--tw-ring-w,3px) var(--tw-ring-color)" } if (/^\d+$/.test(val)) { return "--tw-ring-w:" + val + "px;box-shadow:0 0 0 var(--tw-ring-w) var(--tw-ring-color,rgb(59 130 246 / 0.5))" } }
+  if (key === "shadow") { if (val in SHADOW) { return "box-shadow:" + SHADOW[val] } let c = color(val, theme); if (c !== null) { return "--tw-shadow-color:" + c } if (arb !== null) { return "box-shadow:" + arb } }
+  // borders
+  if (key === "border") {
+    if (/^\d+$/.test(val)) { return "border-width:" + val + "px" }
+    let c = color(val, theme)
+    if (c !== null) { return "border-color:" + c }
+    if (val.length <= 2 && val in SIDES) { return SIDES[val].map(sd => "border-" + sd + "-width:1px").join(";") }
+    let sm = /^([trblxy])-(.+)$/.exec(val)
+    if (sm !== null) {
+      if (/^\d+$/.test(sm[2])) { return SIDES[sm[1]].map(sd => "border-" + sd + "-width:" + sm[2] + "px").join(";") }
+      let cc = color(sm[2], theme)
+      if (cc !== null) { return SIDES[sm[1]].map(sd => "border-" + sd + "-color:" + cc).join(";") }
+    }
+  }
+  if (key === "divide") { let c = color(val, theme); if (c !== null) { return "& > :not([hidden]) ~ :not([hidden]){border-color:" + c + "}" } }
+  if (key === "rounded") {
+    if (val in ROUNDED) { return "border-radius:" + ROUNDED[val] }
+    if (arb !== null) { return "border-radius:" + arb }
+    let cm = /^(tl|tr|br|bl|t|r|b|l)(?:-(.+))?$/.exec(val)
+    if (cm !== null && cm[1] in CORNERS) {
+      let r = cm[2] === null ? ROUNDED.DEFAULT : (cm[2] in ROUNDED ? ROUNDED[cm[2]] : arbitrary(cm[2]))
+      if (r !== null) { return CORNERS[cm[1]].map(c => "border-" + c + "-radius:" + r).join(";") }
+    }
+  }
+  // grid
+  if (key === "grid-cols") { if (/^\d+$/.test(val)) { return "grid-template-columns:repeat(" + val + ", minmax(0, 1fr))" } if (val === "none") { return "grid-template-columns:none" } if (arb !== null) { return "grid-template-columns:" + arb } }
+  if (key === "grid-rows") { if (/^\d+$/.test(val)) { return "grid-template-rows:repeat(" + val + ", minmax(0, 1fr))" } if (arb !== null) { return "grid-template-rows:" + arb } }
+  if (key === "col-span") { return "grid-column:span " + val + " / span " + val }
+  if (key === "row-span") { return "grid-row:span " + val + " / span " + val }
+  if (key === "col-start") { return "grid-column-start:" + val }
+  if (key === "col-end") { return "grid-column-end:" + val }
+  if (key === "row-start") { return "grid-row-start:" + val }
+  if (key === "auto-cols") { return "grid-auto-columns:" + (val === "fr" ? "minmax(0, 1fr)" : val) }
+  if (key === "auto-rows") { return "grid-auto-rows:" + (val === "fr" ? "minmax(0, 1fr)" : val) }
+  // misc
+  if (key === "duration") { if (val in DURATION) { return "transition-duration:" + DURATION[val] } if (arb !== null) { return "transition-duration:" + arb } }
+  if (key === "delay") { if (val in DURATION) { return "transition-delay:" + DURATION[val] } }
+  if (key === "ease") { if (val in EASE) { return "transition-timing-function:" + EASE[val] } if (arb !== null) { return "transition-timing-function:" + arb } }
+  if (key === "blur") { if (val in BLUR) { return "filter:blur(" + BLUR[val] + ")" } }
+  if (key === "backdrop-blur") { if (val in BLUR) { return "backdrop-filter:blur(" + BLUR[val] + ")" } }
+  if (key === "brightness") { return "filter:brightness(" + (parseFloat(val) / 100) + ")" }
+  if (key === "grayscale") { return "filter:grayscale(" + val + "%)" }
+  if (key === "aspect") { if (arb !== null) { return "aspect-ratio:" + arb } }
+  if (key === "columns") { return "columns:" + val }
+  if (key === "content") { if (arb !== null) { return "content:" + arb } if (val === "none") { return "content:none" } }
+  if (key === "cursor") { return "cursor:" + val }
+  if (key === "object") { if (arb !== null) { return "object-position:" + arb } }
+  if (key === "will-change") { return "will-change:" + val }
+  if (key === "scroll-mt" && sp !== null) { return "scroll-margin-top:" + sp }
+  if (key === "scroll-pt" && sp !== null) { return "scroll-padding-top:" + sp }
+  if (key === "animate") { if (arb !== null) { return "animation:" + arb } if (has(theme.animations, val)) { return "animation:" + theme.animations[val] } }
+  if (key === "flex" && arb !== null) { return "flex:" + arb }
+  if (key === "basis" && sp !== null) { return "flex-basis:" + sp }
+  if (key === "transition" && arb !== null) { return "transition-property:" + arb + ";transition-timing-function:cubic-bezier(0.4,0,0.2,1);transition-duration:150ms" }
+  if (key === "origin" && arb !== null) { return "transform-origin:" + arb }
+  return null
+}
+
+// Parse "md:hover:bg-red-500" -> { variants: ["md","hover"], utility: "bg-red-500" }
+fn parseClass(cls) {
+  let parts = []
+  let cur = ""
+  let depth = 0
+  let i = 0
+  while (i < cls.length) {
+    let c = cls.charAt(i)
+    if (c === "[") { depth = depth + 1 }
+    if (c === "]") { depth = depth - 1 }
+    if (c === ":" && depth === 0) { parts.push(cur); cur = "" } else { cur = cur + c }
+    i = i + 1
+  }
+  parts.push(cur)
+  return { variants: parts.slice(0, parts.length - 1), utility: parts[parts.length - 1] }
+}
+
+fn wrapVariant(v, sel, body, theme) {
+  // returns { sel, body, media } ; body already braces-less declarations or nested "&..." rule
+  if (v in SCREENS || has(theme.screens, v)) { return { sel: sel, media: "@media (min-width: " + (has(theme.screens, v) ? theme.screens[v] : SCREENS[v]) + ")" } }
+  if (v === "dark") { return { sel: sel, media: has(theme, "darkMode") && theme.darkMode === "class" ? null : "@media (prefers-color-scheme: dark)", prefix: has(theme, "darkMode") && theme.darkMode === "class" ? ".dark " : null } }
+  if (v === "motion-reduce") { return { sel: sel, media: "@media (prefers-reduced-motion: reduce)" } }
+  if (v === "motion-safe") { return { sel: sel, media: "@media (prefers-reduced-motion: no-preference)" } }
+  if (v === "print") { return { sel: sel, media: "@media print" } }
+  if (v === "group-hover") { return { sel: sel, prefix: ".group:hover " } }
+  if (v === "group-focus") { return { sel: sel, prefix: ".group:focus-within " } }
+  if (v === "peer-checked") { return { sel: sel, prefix: ".peer:checked ~ " } }
+  if (v === "before") { return { sel: sel + "::before" } }
+  if (v === "after") { return { sel: sel + "::after" } }
+  if (v === "placeholder") { return { sel: sel + "::placeholder" } }
+  if (v === "marker") { return { sel: sel + "::marker" } }
+  if (v === "selection") { return { sel: sel + "::selection" } }
+  if (v === "first") { return { sel: sel + ":first-child" } }
+  if (v === "last") { return { sel: sel + ":last-child" } }
+  if (v === "odd") { return { sel: sel + ":nth-child(odd)" } }
+  if (v === "even") { return { sel: sel + ":nth-child(even)" } }
+  if (v === "focus-visible" || v === "focus-within" || v === "hover" || v === "focus" || v === "active" || v === "visited" || v === "disabled" || v === "checked" || v === "empty" || v === "target") { return { sel: sel + ":" + v } }
+  if (v.startsWith("[") && v.endsWith("]")) { return { sel: sel + v.slice(1, v.length - 1) } }
+  if (v.startsWith("has-[") && v.endsWith("]")) { return { sel: sel + ":has(" + v.slice(5, v.length - 1) + ")" } }
+  if (v.startsWith("aria-")) { return { sel: sel + "[" + v + '="true"]' } }
+  if (v.startsWith("data-[") && v.endsWith("]")) { return { sel: sel + "[" + v.slice(6, v.length - 1) + "]" } }
+  return null
+}
+
+fn variantOrder(v, theme) {
+  if (v in SCREENS) { return 100 + 10 * Object.keys(SCREENS).indexOf(v) }
+  if (has(theme.screens, v)) { return 100 + 10 * (5 + Object.keys(theme.screens).indexOf(v)) }
+  if (v === "dark") { return 5 }
+  if (v === "hover") { return 20 }
+  if (v === "focus" || v === "focus-visible") { return 21 }
+  if (v === "active") { return 22 }
+  return 1
+}
+
+export fn makeTheme(overrides) {
+  let t = { colors: defaultColors(), spacing: {}, fonts: {}, screens: {}, animations: {}, darkMode: "media" }
+  if (overrides !== null) {
+    for (let k of Object.keys(overrides)) {
+      if (k === "colors" || k === "spacing" || k === "fonts" || k === "screens" || k === "animations") {
+        for (let kk of Object.keys(overrides[k])) { t[k][kk] = overrides[k][kk] }
+      } else { t[k] = overrides[k] }
+    }
+  }
+  return t
+}
+
+// Compile one class -> css rule string or null.
+export fn compileClass(cls, theme) {
+  let pc = parseClass(cls)
+  let decl = utility(pc.utility, theme)
+  if (decl === null) { return null }
+  let sel = "." + esc(cls)
+  let media = []
+  let prefix = ""
+  for (let v of pc.variants) {
+    let w = wrapVariant(v, sel, decl, theme)
+    if (w === null) { return null }
+    sel = w.sel
+    if (has(w, "media")) { media.push(w.media) }
+    if (has(w, "prefix")) { prefix = w.prefix + prefix }
+  }
+  sel = prefix + sel
+  let rule = ""
+  if (decl.startsWith("&")) { rule = decl.replace("&", sel) }
+  else { rule = sel + "{" + decl + "}" }
+  for (let m of media) { rule = m + "{" + rule + "}" }
+  let order = 0
+  for (let v of pc.variants) { order = order + variantOrder(v, theme) }
+  return { rule: rule, order: order, keyframe: pc.utility.startsWith("animate-") && pc.utility.slice(8) in KEYFRAMES ? KEYFRAMES[pc.utility.slice(8)] : null }
+}
+
+// Extract candidate class tokens from source text (HTML, JSX, markdown).
+export fn extractClasses(text) {
+  let out = {}
+  let re = /[A-Za-z][A-Za-z0-9:_\/\.\[\]#%,()!-]*[A-Za-z0-9\]%)]/g
+  let m = re.exec(text)
+  while (m !== null) {
+    let tok = m[0]
+    if (tok.length < 2 || tok.length > 80) { m = re.exec(text); continue }
+    if (tok.indexOf("[") >= 0 && tok.indexOf("]") < 0) { m = re.exec(text); continue }
+    out[tok] = true
+    // also negative forms preceded by '-'
+    m = re.exec(text)
+  }
+  let neg = /(?:^|[\s"'`{])(-[a-z][A-Za-z0-9:_\/\.\[\]#-]*)/g
+  let nm = neg.exec(text)
+  while (nm !== null) { out[nm[1]] = true; nm = neg.exec(text) }
+  return Object.keys(out)
+}
+
+// generate(sources: string[], themeOverrides) -> css
+export fn generate(sources, themeOverrides, includePreflight) {
+  let theme = makeTheme(themeOverrides)
+  let seen = {}
+  let rules = []
+  let keyframes = {}
+  for (let src of sources) {
+    for (let cls of extractClasses(src)) {
+      if (cls in seen) { continue }
+      seen[cls] = true
+      let r = compileClass(cls, theme)
+      if (r === null) { continue }
+      rules.push(r)
+      if (r.keyframe !== null) { keyframes[r.keyframe] = true }
+    }
+  }
+  rules.sort((a, b) => a.order - b.order)
+  let out = []
+  for (let k of Object.keys(keyframes)) { out.push(k) }
+  for (let r of rules) { out.push(r.rule) }
+  return out.join("\n")
+}
+
+// tw("a b", cond && "c", ["d", null]) -> "a b c d"
+export fn tw(...parts) {
+  let out = []
+  for (let p of parts) {
+    if (p === null || p === false || p === true) { continue }
+    if (Array.isArray(p)) { out.push(tw(...p)); continue }
+    out.push(String(p))
+  }
+  return out.filter(s => s !== "").join(" ")
+}

@@ -1,0 +1,25 @@
+import { island } from "@tishlang/orbit"
+
+export fn head(ctx) { return { title: "Home", rawTitle: false, description: ctx.site.description } }
+
+export fn page(ctx) {
+  let posts = ctx.collections.blog.slice(0, 5)
+  return (
+    <div class="space-y-10">
+      <section>
+        <h1 class="text-4xl font-bold tracking-tight">Hello, orbit.</h1>
+        <p class="mt-3 text-lg text-slate-600 dark:text-slate-400">Static, server, and incremental pages from markdown + Tish.</p>
+      </section>
+      <section>
+        <h2 class="text-xl font-semibold mb-4">Latest posts</h2>
+        <ul class="space-y-2">
+          {posts.map(p => <li><a class="underline hover:text-brand-500" href={p.url}>{p.title}</a> <span class="text-slate-500 text-sm">{p.date === null ? "" : p.date.slice(0, 10)}</span></li>)}
+        </ul>
+      </section>
+      <section>
+        <h2 class="text-xl font-semibold mb-4">An island</h2>
+        {island("counter", { start: 3 }, { class: "inline-block rounded border p-3", load: "visible" })}
+      </section>
+    </div>
+  )
+}

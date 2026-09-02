@@ -1,0 +1,37 @@
+// Native host: run with `tish run --feature fs --feature http --feature process`.
+import { readFile as fsRead, readFileBytes as fsReadBytes, writeFile as fsWrite, readDir as fsReadDir, isDir as fsIsDir, fileExists as fsExists, mkdir as fsMkdir, rm as fsRm, copyFile as fsCopy, stat as fsStat } from "tish:fs"
+import { fetch as httpFetch } from "tish:http"
+import { process } from "tish:process"
+import { setHost } from "./host.tish"
+
+fn wrapResponse(res) {
+  return {
+    status: res.status,
+    ok: res.ok,
+    headers: res.headers,
+    text: async fn () { return await res.text() },
+    json: async fn () { return await res.json() }
+  }
+}
+
+export fn installTishHost() {
+  setHost({
+    readFile: async fn (p) { return fsRead(p) },
+    readFileBytes: async fn (p) { return fsReadBytes(p) },
+    writeFile: async fn (p, d) { return fsWrite(p, d) },
+    readDir: async fn (p) { return fsReadDir(p) },
+    isDir: async fn (p) { return fsIsDir(p) },
+    exists: async fn (p) { return fsExists(p) },
+    mkdir: async fn (p) { return fsMkdir(p, true) },
+    rm: async fn (p) { return fsRm(p, { recursive: true, force: true }) },
+    copyFile: async fn (a, b) { return fsCopy(a, b) },
+    stat: async fn (p) { return fsStat(p) },
+    fetch: async fn (url, opts) { return wrapResponse(await httpFetch(url, opts)) },
+    env: fn (n) { return n in process.env ? process.env[n] : null },
+    cwd: fn () { return process.cwd() },
+    now: fn () { return Date.now() },
+    log: fn (args) { console.log(args.join(" ")) }
+  })
+}
+
+installTishHost()

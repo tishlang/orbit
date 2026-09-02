@@ -1,0 +1,16 @@
+export fn head(ctx) { return { title: "Blog" } }
+export fn page(ctx) {
+  return (
+    <div>
+      <h1 class="text-3xl font-bold mb-6">Blog</h1>
+      <ul class="space-y-4">
+        {ctx.collections.blog.map(p => (
+          <li>
+            <a class="text-lg font-medium hover:text-brand-500" href={p.url}>{p.title}</a>
+            <p class="text-slate-600 dark:text-slate-400">{p.excerpt}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

@@ -1,0 +1,111 @@
+// Virtual DOM -> HTML string. h() is the JSX factory (configure --jsx-import-source).
+import { escapeHtml, escapeAttr } from "../util/html.tish"
+
+export let Fragment = "__fragment__"
+let VOID = { area: 1, base: 1, br: 1, col: 1, embed: 1, hr: 1, img: 1, input: 1, link: 1, meta: 1, source: 1, track: 1, wbr: 1 }
+
+export fn h(tag, props, ...children) {
+  return { tag: tag, props: props === null ? {} : props, children: children }
+}
+// Insert pre-rendered HTML without escaping.
+export fn raw(html) { return { raw: html === null ? "" : String(html) } }
+// Streaming boundary: `defer(promise, fallback)`. In stream mode everything before
+// the boundary is flushed first and the resolved tree follows as a later chunk.
+export fn defer(promise, fallback) { return { defer: promise, fallback: fallback === null ? null : fallback } }
+
+fn attrs(props) {
+  let out = ""
+  for (let k of Object.keys(props)) {
+    let v = props[k]
+    if (v === null || v === false || k === "children" || k === "key" || k === "ref") { continue }
+    let name = k === "className" ? "class" : (k === "htmlFor" ? "for" : k)
+    if (name.startsWith("data_") || name.startsWith("aria_")) { name = name.replaceAll("_", "-") }
+    if (name === "dangerouslySetInnerHTML") { continue }
+    if (v === true) { out = out + " " + name; continue }
+    if (name === "style" && typeof v === "object") {
+      let s = ""
+      for (let sk of Object.keys(v)) { s = s + sk.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()) + ":" + v[sk] + ";" }
+      v = s
+    }
+    if (name === "class" && Array.isArray(v)) { v = v.filter(x => x !== null && x !== false && x !== "").join(" ") }
+    out = out + " " + name + '="' + escapeAttr(v) + '"'
+  }
+  return out
+}
+
+fn isPromise(x) { return x !== null && typeof x === "object" && typeof x.then === "function" }
+
+// Renders to an array of parts: strings, or {defer, fallback} boundaries (only when
+// `allowDefer` is true; otherwise deferred trees are awaited by renderToString).
+fn walk(node, parts, allowDefer) {
+  if (node === null || node === false || node === true) { return }
+  if (typeof node === "string") { parts.push(escapeHtml(node)); return }
+  if (typeof node === "number") { parts.push(String(node)); return }
+  if (Array.isArray(node)) { for (let c of node) { walk(c, parts, allowDefer) } return }
+  if ("raw" in node) { parts.push(node.raw); return }
+  if ("defer" in node) {
+    if (allowDefer) { parts.push(node) } else { parts.push(node) }
+    return
+  }
+  if (isPromise(node)) { parts.push({ defer: node, fallback: null }); return }
+  let tag = node.tag
+  let props = node.props
+  if (typeof tag === "function") {
+    let p = {}
+    for (let k of Object.keys(props)) { p[k] = props[k] }
+    p.children = node.children
+    walk(tag(p), parts, allowDefer)
+    return
+  }
+  if (tag === Fragment) { walk(node.children, parts, allowDefer); return }
+  parts.push("<" + tag + attrs(props) + ">")
+  if (tag in VOID) { return }
+  if ("dangerouslySetInnerHTML" in props && props.dangerouslySetInnerHTML !== null) { parts.push(props.dangerouslySetInnerHTML.__html) }
+  else { walk(node.children, parts, allowDefer) }
+  parts.push("</" + tag + ">")
+}
+
+// Full string render; deferred boundaries are awaited inline.
+export async fn renderToString(node) {
+  let parts = []
+  walk(node, parts, true)
+  let out = ""
+  for (let p of parts) {
+    if (typeof p === "string") { out = out + p }
+    else { out = out + await renderToString(await p.defer) }
+  }
+  return out
+}
+
+// Chunked render: returns [string | Promise<string>] so a server can flush the
+// static shell before slow data resolves. Deferred boundaries render their
+// fallback in place and stream the real content later inside a <template> +
+// tiny swap script (Next/React style out-of-order streaming).
+export fn renderToChunks(node) {
+  let parts = []
+  walk(node, parts, true)
+  let chunks = []
+  let buf = ""
+  let n = 0
+  let later = []
+  for (let p of parts) {
+    if (typeof p === "string") { buf = buf + p; continue }
+    let id = "orbit-d" + n
+    n = n + 1
+    buf = buf + '<div id="' + id + '" data-orbit-defer>'
+    let fbParts = []
+    walk(p.fallback, fbParts, false)
+    for (let f of fbParts) { if (typeof f === "string") { buf = buf + f } }
+    buf = buf + "</div>"
+    later.push(laterChunk(id, p.defer))
+  }
+  chunks.push(buf)
+  for (let l of later) { chunks.push(l) }
+  return chunks
+}
+
+async fn laterChunk(id, promise) {
+  let tree = await promise
+  let html = await renderToString(tree)
+  return '<template data-orbit-for="' + id + '">' + html + '</template><script>(function(){var t=document.currentScript.previousElementSibling,d=document.getElementById(t.dataset.orbitFor);if(d){d.replaceWith(t.content.cloneNode(true));}t.remove();document.currentScript.remove();document.dispatchEvent(new Event("orbit:chunk"));})()</script>'
+}

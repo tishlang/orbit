@@ -1,0 +1,31 @@
+// Host shim. Framework and site code never import tish:* / node:* directly;
+// they call these functions, which forward to whatever host was injected.
+// Native: src/runtime/tish-host.tish injects tish:fs / tish:http / tish:process.
+// Node/Vercel: src/runtime/node-host.mjs injects node:fs + global fetch.
+// Every function is async so page code behaves identically on both hosts.
+
+let host = null
+
+export fn setHost(h) { host = h }
+export fn getHost() { return host }
+fn need() {
+  if (host === null) { throw new Error("orbit runtime: no host installed (call setHost)") }
+  return host
+}
+
+export async fn readFile(path) { return await need().readFile(path) }
+export async fn readFileBytes(path) { return await need().readFileBytes(path) }
+export async fn writeFile(path, data) { return await need().writeFile(path, data) }
+export async fn readDir(path) { return await need().readDir(path) }
+export async fn isDir(path) { return await need().isDir(path) }
+export async fn exists(path) { return await need().exists(path) }
+export async fn mkdir(path) { return await need().mkdir(path) }
+export async fn rm(path) { return await need().rm(path) }
+export async fn copyFile(from, to) { return await need().copyFile(from, to) }
+export async fn stat(path) { return await need().stat(path) }
+// fetch(url, opts) -> { status, ok, headers, text(), json() }
+export async fn fetch(url, opts) { return await need().fetch(url, opts === null ? {} : opts) }
+export fn env(name) { return need().env(name) }
+export fn cwd() { return need().cwd() }
+export fn now() { return need().now() }
+export fn log(...args) { need().log(args) }

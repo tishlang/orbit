@@ -1,0 +1,20 @@
+import { parseDocument } from "@tishlang/tishdoc-parse"
+import { renderToHtmlFragment } from "@tishlang/tishdoc-render-html"
+import { slugify, stripTags } from "../util/html.tish"
+
+// renderMarkdown(src) -> { html, headings: [{level, text, id}] }
+export fn renderMarkdown(src) {
+  let pr = parseDocument(src, null)
+  let html = renderToHtmlFragment(pr.ast)
+  let headings = []
+  let used = {}
+  html = html.replace(/<h([1-6])>([\s\S]*?)<\/h\1>/g, (m, lvl, inner) => {
+    let text = stripTags(inner)
+    let id = slugify(text)
+    if (id === "") { id = "section" }
+    if (id in used) { used[id] = used[id] + 1; id = id + "-" + used[id] } else { used[id] = 1 }
+    headings.push({ level: parseInt(lvl, 10), text: text, id: id })
+    return '<h' + lvl + ' id="' + id + '">' + inner + "</h" + lvl + ">"
+  })
+  return { html: html, headings: headings }
+}

@@ -1,0 +1,4 @@
+export fn head(ctx) { return { title: "Not found", noindex: true } }
+export fn page(ctx) {
+  return <div class="text-center py-20"><h1 class="text-5xl font-bold">404</h1><p class="mt-4">Nothing here. <a class="underline" href="/">Go home</a></p></div>
+}

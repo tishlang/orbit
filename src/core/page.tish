@@ -1,0 +1,18 @@
+// Normalizes a page module (namespace import) into a page descriptor.
+fn has(mod, k) { return k in mod && mod[k] !== null }
+export fn normalizePage(mod) {
+  let render = has(mod, "render") ? mod.render : "static"
+  if (render !== "static" && render !== "server" && render !== "isr") { throw new Error("orbit: invalid render mode '" + render + "'") }
+  return {
+    render: render,
+    revalidate: has(mod, "revalidate") ? mod.revalidate : (render === "isr" ? 60 : null),
+    stream: has(mod, "stream") ? mod.stream === true : false,
+    contentType: has(mod, "contentType") ? mod.contentType : "text/html; charset=utf-8",
+    paths: has(mod, "paths") ? mod.paths : null,
+    load: has(mod, "load") ? mod.load : null,
+    head: has(mod, "head") ? mod.head : null,
+    page: has(mod, "page") ? mod.page : (has(mod, "default") ? mod["default"] : null),
+    layout: has(mod, "layout") ? mod.layout : true,
+    headers: has(mod, "headers") ? mod.headers : null
+  }
+}

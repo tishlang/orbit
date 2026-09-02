@@ -1,0 +1,24 @@
+import { describe, it, expect } from "tish:test"
+import { join, normalize, dirname, basename, extname, relative, stripExt } from "../src/util/path.tish"
+
+describe("path", () => {
+  it("joins and normalizes", () => {
+    expect(join("a", "b/", "/c")).toBe("a/b/c")
+    expect(join("/a/./b/../c")).toBe("/a/c")
+    expect(normalize("a//b")).toBe("a/b")
+    expect(join("dist", "/index.html")).toBe("dist/index.html")
+  })
+  it("splits", () => {
+    expect(dirname("/a/b/c.txt")).toBe("/a/b")
+    expect(dirname("c.txt")).toBe(".")
+    expect(basename("/a/b/c.txt", null)).toBe("c.txt")
+    expect(basename("/a/b/c.txt", ".txt")).toBe("c")
+    expect(extname("x/y.tar.gz")).toBe(".gz")
+    expect(extname(".hidden")).toBe("")
+    expect(stripExt("a/b.md")).toBe("a/b")
+  })
+  it("relative", () => {
+    expect(relative("/a/b", "/a/c/d")).toBe("../c/d")
+    expect(relative("/a", "/a")).toBe(".")
+  })
+})

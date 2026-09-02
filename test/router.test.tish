@@ -1,0 +1,36 @@
+import { describe, it, expect } from "tish:test"
+import { fileToRoute, matchRoute, sortRoutes, fillPath, matchRedirect } from "../src/core/router.tish"
+
+describe("router", () => {
+  it("maps files to routes", () => {
+    expect(fileToRoute("index.tish").path).toBe("/")
+    expect(fileToRoute("blog/index.tish").path).toBe("/blog")
+    let r = fileToRoute("blog/[slug].tish")
+    expect(r.path).toBe("/blog/:slug")
+    expect(r.params).toEqual(["slug"])
+    let c = fileToRoute("docs/[...path].tish")
+    expect(c.path).toBe("/docs/*path")
+    expect(c.catchAll).toBe(true)
+  })
+  it("matches with params and sorts static first", () => {
+    let routes = sortRoutes([fileToRoute("blog/[slug].tish"), fileToRoute("blog/new.tish"), fileToRoute("docs/[...path].tish"), fileToRoute("index.tish")])
+    expect(routes[0].path).toBe("/blog/new")
+    let m = matchRoute(routes, "/blog/new/")
+    expect(m.route.path).toBe("/blog/new")
+    let m2 = matchRoute(routes, "/blog/hello%20world/")
+    expect(m2.params.slug).toBe("hello world")
+    let m3 = matchRoute(routes, "/docs/a/b/c")
+    expect(m3.params.path).toBe("a/b/c")
+    expect(matchRoute(routes, "/nope")).toBeNull()
+    expect(matchRoute(routes, "/").route.path).toBe("/")
+  })
+  it("fills paths and redirects", () => {
+    expect(fillPath("/blog/:slug", { slug: "a b" })).toBe("/blog/a%20b")
+    let rd = [{ from: "/cocktails/*", to: "/drink/*" }, { from: "/post/:id", to: "/blog/:id", status: 302 }, { from: "/old", to: "/new" }]
+    expect(matchRedirect(rd, "/cocktails/gin").to).toBe("/drink/gin")
+    expect(matchRedirect(rd, "/post/42/").to).toBe("/blog/42")
+    expect(matchRedirect(rd, "/post/42/").status).toBe(302)
+    expect(matchRedirect(rd, "/old/").to).toBe("/new")
+    expect(matchRedirect(rd, "/other")).toBeNull()
+  })
+})
