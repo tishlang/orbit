@@ -26,10 +26,8 @@ export async function writeVercelOutput(root, build) {
   fs.cpSync(build.staticDir, path.join(out, 'static'), { recursive: true })
 
   const routes = [...redirectRoutes(build.redirects)]
-  // canonical trailing slash: /blog -> /blog/ for every directory-index page (static or isr)
-  for (const p of build.pages) {
-    if (p.path !== '/' && p.path.endsWith('/') && p.contentType?.includes('text/html')) routes.push({ src: '^' + esc(p.path.replace(/\/$/, '')) + '$', headers: { Location: p.path }, status: 308 })
-  }
+  // canonical trailing slash: /blog -> /blog/ (paths without an extension), same rule Next.js emits
+  routes.push({ src: '^/((?:[^/]+/)*[^/.]+)$', headers: { Location: '/$1/' }, status: 308 })
   routes.push({ handle: 'filesystem' })
 
   const hasFunctions = build.functions.length > 0
