@@ -9,9 +9,13 @@ export fn slugify(s) {
   if (s === null) { return "" }
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 }
+export fn decodeEntities(s) {
+  if (s === null) { return "" }
+  return String(s).replaceAll("&nbsp;", " ").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&#39;", "'").replaceAll("&#x27;", "'").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(parseInt(n, 10))).replaceAll("&amp;", "&")
+}
 export fn stripTags(html) {
   if (html === null) { return "" }
-  return html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
+  return decodeEntities(html.replace(/<[^>]*>/g, "")).replace(/\s+/g, " ").trim()
 }
 export fn truncate(s, n) {
   if (s === null) { return "" }
