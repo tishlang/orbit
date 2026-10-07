@@ -94,7 +94,11 @@ export async fn renderRoute(app, route, req, params) {
   if (page.load !== null) {
     let r = await page.load(ctx)
     if (r !== null) {
-      if (has(r, "redirect")) { return { status: has(r, "status") ? r.status : 302, headers: { location: r.redirect }, chunks: [""] } }
+      if (has(r, "redirect")) {
+        let rh = { location: r.redirect }
+        if (has(r, "headers")) { for (let k of Object.keys(r.headers)) { rh[k.toLowerCase()] = r.headers[k] } }
+        return { status: has(r, "status") ? r.status : 302, headers: rh, chunks: [""] }
+      }
       if (has(r, "notFound") && r.notFound === true) { return await renderNotFound(app, req) }
       if (has(r, "props")) { props = r.props } else { props = r }
       if (has(r, "status")) { ctx.status = r.status }
@@ -138,15 +142,26 @@ export async fn renderNotFound(app, req) {
   return textResponse(404, "Not found: " + req.path, null)
 }
 
+// "?a=1&b=2" from req.query, or "" when there is none.
+fn queryString(req) {
+  if (!has(req, "query")) { return "" }
+  let keys = Object.keys(req.query)
+  if (keys.length === 0) { return "" }
+  return "?" + keys.map(k => encodeURIComponent(k) + "=" + encodeURIComponent(req.query[k])).join("&")
+}
+
 export async fn handle(app, req) {
   let path = req.path
   let redirects = has(app.site, "redirects") ? app.site.redirects : []
   let rd = matchRedirect(redirects, path)
   if (rd !== null) { return { status: rd.status, headers: { location: rd.to }, chunks: [""] } }
-  // trailing-slash normalization: /blog -> /blog/ (except files)
-  if (path.length > 1 && !path.endsWith("/") && path.lastIndexOf(".") < path.lastIndexOf("/")) {
-    let m0 = matchRoute(app.routes, path + "/")
-    if (m0 !== null && matchRoute(app.routes, path) === null) { return { status: 308, headers: { location: path + "/" }, chunks: [""] } }
+  // Trailing-slash normalization, as on Vercel: site.trailingSlash (default true) sends /blog to
+  // /blog/; false sends /blog/ to /blog. Paths with an extension (files) are left alone.
+  let slash = !(has(app.site, "trailingSlash") && app.site.trailingSlash === false)
+  let isFile = path.lastIndexOf(".") > path.lastIndexOf("/")
+  if (path.length > 1 && !isFile && slash !== path.endsWith("/") && matchRoute(app.routes, path) !== null) {
+    let to = slash ? path + "/" : path.slice(0, path.length - 1)
+    return { status: 308, headers: { location: to + queryString(req) }, chunks: [""] }
   }
   let m = matchRoute(app.routes, path)
   if (m === null) { return await renderNotFound(app, req) }

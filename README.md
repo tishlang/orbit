@@ -31,7 +31,7 @@ export let stream = false        // server/isr: flush the shell, stream defer() 
 export fn paths(ctx) { return ctx.collections.blog.map(p => ({ params: { slug: p.slug } })) }
 export async fn load(ctx) {
   let post = ctx.bySlug(ctx.collections.blog, ctx.params.slug)
-  if (post === null) { return { notFound: true } }        // or { redirect: "/x", status: 301 }
+  if (post === null) { return { notFound: true } }        // or { redirect: "/x", status: 301, headers: { … } }
   return { props: { post }, headers: { "x-custom": "1" } }
 }
 export fn head(ctx, props) { return { title: props.post.title, description: props.post.excerpt, type: "article", jsonLd: articleLd(ctx.site, props.post, props.post.url) } }
@@ -80,6 +80,7 @@ export let site = {
   feeds: { rss: "/rss.xml", atom: "/atom.xml", collections: ["blog"], limit: 30 },
   collections: { blog: { dir: "content/blog", route: "/blog/:slug", sortBy: "date", desc: true, drafts: false } },
   redirects: [{ from: "/old/*", to: "/new/*" }, { from: "/post/:id", to: "/blog/:id", status: 301 }],
+  trailingSlash: true,                  // default: /blog → /blog/ (308); false: /blog/ → /blog
   tailwind: { theme: { colors: { brand: { "500": "#6366f1" } }, fonts: {}, screens: {} }, preflight: true },
   styles: ["styles/base.css"],
   head: ['<link rel="preconnect" …>'], bodyEnd: [],
@@ -106,7 +107,7 @@ Utilities are generated from the classes found in your pages, content, and islan
 On Vercel: framework preset **Other**, build command `npm run build`, no output directory needed. The Tish compiler comes from the `@tishlang/tish` devDependency.
 
 ## Tests
-
 ```
-npx tish test test/
+npm test           # unit tests (tish test test/)
+npm run test:e2e   # scaffold the template, build for node and Vercel, serve, and check the responses
 ```

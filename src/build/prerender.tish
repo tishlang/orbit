@@ -24,6 +24,7 @@ export async fn prerender(app, outDir, log) {
   let functions = []  // routes needing a server function: server + isr + dynamic without paths
   let sitemapUrls = []
   let site = app.site
+  let slash = !(has(site, "trailingSlash") && site.trailingSlash === false)
   for (let route of app.routes) {
     let page = route.page
     if (page.render === "server") { functions.push({ path: route.path, regex: route.regex, mode: "server", file: route.file, stream: page.stream }); continue }
@@ -42,7 +43,7 @@ export async fn prerender(app, outDir, log) {
     }
     for (let ps of paramSets) {
       let path = fillPath(route.path, ps.params)
-      if (!path.endsWith("/") && path.lastIndexOf(".") < path.lastIndexOf("/")) { path = path + "/" }
+      if (slash && !path.endsWith("/") && path.lastIndexOf(".") < path.lastIndexOf("/")) { path = path + "/" }
       let res = await handle(app, { path: path, query: {}, headers: {}, method: "GET" })
       let body = await collect(res)
       if (res.status >= 300 && res.status < 400) { continue }

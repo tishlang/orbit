@@ -2,7 +2,18 @@
   "name": "orbit-site",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "orbit dev", "build": "orbit build", "start": "orbit start" },
-  "dependencies": { "@tishlang/orbit": "^0.1.0" },
-  "devDependencies": { "@tishlang/tish": "^3.10.11" }
+  "scripts": {
+    "dev": "orbit dev",
+    "build": "orbit build",
+    "start": "orbit start"
+  },
+  "dependencies": {
+    "@tishlang/orbit": "^0.1.0"
+  },
+  "devDependencies": {
+    "@tishlang/tish": "3.15.3"
+  },
+  "allowScripts": {
+    "@tishlang/tish": true
+  }
 }

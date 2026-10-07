@@ -53,7 +53,7 @@ export async fn loadCollection(name, cfg) {
     let md = renderMarkdown(fm.content, "html" in cfg ? { html: cfg.html } : null)
     let route = opt(cfg, "route", "/" + name + "/:slug")
     let url = route.replace(":slug", slug)
-    if (!url.endsWith("/")) { url = url + "/" }
+    if (opt(cfg, "trailingSlash", true) !== false && !url.endsWith("/")) { url = url + "/" }
     let item = {
       collection: name,
       file: file,
@@ -96,7 +96,9 @@ export async fn loadCollections(cfg) {
   let out = {}
   let defs = opt(cfg, "collections", {})
   for (let name of Object.keys(defs)) {
-    out[name] = await loadCollection(name, defs[name] === null ? {} : defs[name])
+    let c = defs[name] === null ? {} : defs[name]
+    if (!("trailingSlash" in c)) { c.trailingSlash = opt(cfg, "trailingSlash", true) }
+    out[name] = await loadCollection(name, c)
   }
   return out
 }

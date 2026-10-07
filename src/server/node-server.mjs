@@ -79,6 +79,14 @@ export async function startDevServer({ root, port = 3000, dev = true }) {
       }
       if (dev && p === '/_orbit/styles.css') { res.writeHead(200, { 'content-type': MIME.css, 'cache-control': 'no-store' }); res.end(state?.css ?? ''); return }
       if (p === '/_orbit/islands.js' || p === '/_orbit/livereload.js' || p === '/_orbit/prefetch.js') { sendFile(res, path.join(here, '..', 'client', path.basename(p)), { 'cache-control': 'no-store' }); return }
+      // Trailing slash, as Vercel does it (site.trailingSlash, default true): a static page reached
+      // by the other spelling redirects first. Dynamic routes get the same rule in the handler.
+      const slash = state?.app?.site?.trailingSlash !== false
+      const isFile = p.lastIndexOf('.') > p.lastIndexOf('/')
+      if (p.length > 1 && !isFile && !p.startsWith('/_orbit/') && slash !== p.endsWith('/')) {
+        const to = slash ? p + '/' : p.slice(0, -1)
+        if (tryStatic(staticDir, to) || tryStatic(dev ? devStatic : null, to)) { res.writeHead(308, { location: to + url.search }); res.end(); return }
+      }
       const sf = tryStatic(staticDir, p) ?? tryStatic(dev ? devStatic : null, p) ?? tryStatic(dev ? path.join(root, 'public') : null, p)
       if (sf) { sendFile(res, sf, dev ? { 'cache-control': 'no-store' } : {}); return }
       if (building) await building

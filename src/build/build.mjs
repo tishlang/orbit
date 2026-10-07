@@ -42,7 +42,7 @@ export async function runBuild({ root, target = 'node', verbose = false }) {
   // public/
   if (fs.existsSync(path.join(root, 'public'))) fs.cpSync(path.join(root, 'public'), staticDir, { recursive: true })
 
-  const build = { target, entryJs, serverDir: outDir, staticDir, css: '/_orbit/' + cssName, islands, pages: result.pages, functions: result.functions, redirects: result.redirects, site: { url: site.url ?? null, functionIncludes: site.functionIncludes ?? ['content'] }, builtAt: new Date().toISOString() }
+  const build = { target, entryJs, serverDir: outDir, staticDir, css: '/_orbit/' + cssName, islands, pages: result.pages, functions: result.functions, redirects: result.redirects, site: { url: site.url ?? null, trailingSlash: site.trailingSlash !== false, functionIncludes: site.functionIncludes ?? ['content'] }, builtAt: new Date().toISOString() }
   fs.writeFileSync(path.join(orbitDir, 'build.json'), JSON.stringify(build, null, 2))
 
   if (target === 'vercel') await writeVercelOutput(root, build)

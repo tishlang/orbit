@@ -15,7 +15,7 @@ export fn fileToRoute(file) {
     let dy = /^\[([A-Za-z0-9_]+)\]$/.exec(s)
     if (ca !== null) { params.push(ca[1]); pattern.push("*" + ca[1]); regexParts.push("(.+?)"); dynamic = dynamic + 10 }
     else if (dy !== null) { params.push(dy[1]); pattern.push(":" + dy[1]); regexParts.push("([^/]+)"); dynamic = dynamic + 1 }
-    else { pattern.push(s); regexParts.push(s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) }
+    else { pattern.push(s); regexParts.push(s.replace(/[.*+?^${}()|\[\]\\]/g, "\\$&")) }
   }
   let path = "/" + pattern.join("/")
   let re = "^/" + regexParts.join("/") + (regexParts.length > 0 ? "/?" : "") + "$"
