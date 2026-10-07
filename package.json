@@ -4,6 +4,14 @@
   "description": "Hybrid (SSG / SSR / ISR) markdown-first web framework written in Tish. File-based routing, layouts, Tailwind, SEO, islands, Vercel Build Output.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tishlang/orbit.git"
+  },
+  "homepage": "https://github.com/tishlang/orbit#readme",
+  "bugs": {
+    "url": "https://github.com/tishlang/orbit/issues"
+  },
   "tish": {
     "module": "./src/main.tish"
   },
@@ -26,7 +34,8 @@
     "src",
     "bin",
     "templates",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "test": "tish test test/",

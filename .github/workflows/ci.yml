@@ -1,0 +1,28 @@
+# Unit tests and the end-to-end build test on every push and pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Unit tests
+        run: npm test
+
+      - name: End to end (scaffold, build for node and Vercel, serve, check)
+        run: npm run test:e2e

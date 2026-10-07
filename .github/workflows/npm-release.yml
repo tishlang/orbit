@@ -1,0 +1,106 @@
+# Releases and npm publishing, in one workflow: npm trusted publishing names a single workflow file.
+#
+# - Push to main: sem reads the conventional commits since the last tag (feat / fix / perf /
+#   BREAKING CHANGE bump; chore / docs / ci / test do not), tags vX.Y.Z and publishes the GitHub
+#   release, then this job publishes that version to npm. It happens in the same job because a
+#   release made with GITHUB_TOKEN does not trigger other workflows.
+# - A release published by hand (or edited): publishes its tag's version.
+# Either way a version already on npm is skipped, so re-runs stay green.
+#
+# AUTH: npm OIDC trusted publishing (no NPM_TOKEN). ONE-TIME setup on npmjs.com, after the first
+# publish: npmjs.com > @tishlang/orbit > Settings > "Trusted Publisher" > GitHub Actions:
+#   Organization or user: tishlang
+#   Repository:           orbit
+#   Workflow filename:    npm-release.yml
+#   Environment:          (leave blank)
+# Requires npm >= 11.5.1 (upgraded below) and the id-token: write permission.
+
+name: NPM release
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+
+concurrency:
+  group: npm-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release and publish
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write   # sem creates the tag and the GitHub release
+      id-token: write   # npm OIDC trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Upgrade npm for OIDC trusted publishing (needs >= 11.5.1)
+        run: npm install -g npm@latest
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Test before releasing
+        if: github.event_name != 'release'
+        run: npm test && npm run test:e2e
+
+      # actions/checkout configures no identity, and sem cannot create the tag without one.
+      - name: Configure git identity for the release tag
+        if: github.event_name != 'release'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Release via sem
+        id: sem
+        if: github.event_name != 'release'
+        uses: tishlang/sem@v1
+        with:
+          config: |
+            branches: [main]
+            plugins:
+              - "@sem/commit-analyzer"
+              - "@sem/release-notes-generator"
+              - ["@sem/github", { "successComment": false }]
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Version to publish
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          elif [ "${{ steps.sem.outputs.new_release_published }}" = "true" ]; then
+            TAG="v${{ steps.sem.outputs.new_release_version }}"
+          else
+            echo "::notice::No release (no feat / fix / perf / BREAKING CHANGE since the last tag)."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          VERSION="${TAG#v}"
+          NAME="$(node -p "require('./package.json').name")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "::notice::${NAME}@${VERSION} is already on npm; skipping."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+          npm publish --access public
