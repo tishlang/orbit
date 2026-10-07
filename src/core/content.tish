@@ -1,10 +1,10 @@
 // Content collections: markdown files with frontmatter under content/<name>/**.
-import { readFile, readDir, isDir, exists } from "../runtime/host.tish"
-import { splitFrontmatter } from "../util/frontmatter.tish"
-import { parseDate, toISO } from "../util/date.tish"
-import { slugify, excerpt as makeExcerpt } from "../util/html.tish"
-import { join, stripExt, basename, extname } from "../util/path.tish"
-import { renderMarkdown } from "./markdown.tish"
+import { readFile, readDir, isDir, exists } from '../runtime/host.tish'
+import { splitFrontmatter } from '../util/frontmatter.tish'
+import { parseDate, toISO } from '../util/date.tish'
+import { slugify, excerpt as makeExcerpt } from '../util/html.tish'
+import { join, stripExt, basename, extname } from '../util/path.tish'
+import { renderMarkdown } from './markdown.tish'
 
 export async fn walkFiles(dir, exts) {
   let out = []
@@ -15,7 +15,7 @@ export async fn walkFiles(dir, exts) {
     let names = await readDir(d)
     names.sort()
     for (let name of names) {
-      if (name.startsWith(".") || name.startsWith("_")) { continue }
+      if (name.startsWith('.') || name.startsWith('_')) { continue }
       let p = join(d, name)
       if (await isDir(p)) { stack.push(p); continue }
       if (exts === null || exts.indexOf(extname(p)) >= 0) { out.push(p) }
@@ -29,56 +29,56 @@ fn opt(o, k, d) { return (k in o && o[k] !== null) ? o[k] : d }
 
 // Loads one collection. cfg: { dir, route?, sortBy?, desc?, drafts? }
 export async fn loadCollection(name, cfg) {
-  let dir = opt(cfg, "dir", "content/" + name)
-  let files = await walkFiles(dir, [".md", ".mdx", ".markdown"])
+  let dir = opt(cfg, 'dir', 'content/' + name)
+  let files = await walkFiles(dir, ['.md', '.mdx', '.markdown'])
   let items = []
   for (let file of files) {
     let src = await readFile(file)
     let fm = splitFrontmatter(src)
     let data = fm.data
-    if (opt(data, "draft", false) === true && opt(cfg, "drafts", false) !== true) { continue }
-    if (opt(data, "state", "published") === "draft" && opt(cfg, "drafts", false) !== true) { continue }
+    if (opt(data, 'draft', false) === true && opt(cfg, 'drafts', false) !== true) { continue }
+    if (opt(data, 'state', 'published') === 'draft' && opt(cfg, 'drafts', false) !== true) { continue }
     let rel = file.slice(dir.length + 1)
-    let slug = opt(data, "slug", null)
+    let slug = opt(data, 'slug', null)
     if (slug === null) {
       let base = stripExt(rel)
-      if (basename(base, null) === "index") { base = base.slice(0, Math.max(0, base.length - 6)) }
-      slug = base.split("/").map(s => slugify(s.replace(/^\d{4}-\d{2}-\d{2}-/, ""))).filter(s => s !== "").join("/")
+      if (basename(base, null) === 'index') { base = base.slice(0, Math.max(0, base.length - 6)) }
+      slug = base.split('/').map(s => slugify(s.replace(/^\d{4}-\d{2}-\d{2}-/, ''))).filter(s => s !== '').join('/')
     }
-    let t = parseDate(opt(data, "date", null))
+    let t = parseDate(opt(data, 'date', null))
     if (t === null) {
       let dm = /(\d{4}-\d{2}-\d{2})/.exec(rel)
       if (dm !== null) { t = parseDate(dm[1]) }
     }
-    let md = renderMarkdown(fm.content, "html" in cfg ? { html: cfg.html } : null)
-    let route = opt(cfg, "route", "/" + name + "/:slug")
-    let url = route.replace(":slug", slug)
-    if (opt(cfg, "trailingSlash", true) !== false && !url.endsWith("/")) { url = url + "/" }
+    let md = renderMarkdown(fm.content, 'html' in cfg ? { html: cfg.html } : null)
+    let route = opt(cfg, 'route', '/' + name + '/:slug')
+    let url = route.replace(':slug', slug)
+    if (opt(cfg, 'trailingSlash', true) !== false && !url.endsWith('/')) { url = url + '/' }
     let item = {
       collection: name,
       file: file,
       slug: slug,
       url: url,
-      title: opt(data, "title", slug),
+      title: opt(data, 'title', slug),
       date: t === null ? null : toISO(t),
       time: t,
-      tags: opt(data, "tags", []).filter((t, i, arr) => arr.indexOf(t) === i),
-      description: opt(data, "description", null),
-      image: opt(data, "image", null),
+      tags: opt(data, 'tags', []).filter((t, i, arr) => arr.indexOf(t) === i),
+      description: opt(data, 'description', null),
+      image: opt(data, 'image', null),
       data: data,
       body: fm.content,
       html: md.html,
       headings: md.headings,
-      excerpt: opt(data, "description", null) !== null ? data.description : makeExcerpt(md.html, 200),
-      wordCount: fm.content.split(/\s+/).filter(w => w !== "").length
+      excerpt: opt(data, 'description', null) !== null ? data.description : makeExcerpt(md.html, 200),
+      wordCount: fm.content.split(/\s+/).filter(w => w !== '').length
     }
     items.push(item)
   }
-  let sortBy = opt(cfg, "sortBy", "date")
-  let desc = opt(cfg, "desc", true)
+  let sortBy = opt(cfg, 'sortBy', 'date')
+  let desc = opt(cfg, 'desc', true)
   items.sort((a, b) => {
-    let av = sortBy === "date" ? (a.time === null ? 0 : a.time) : (sortBy in a ? a[sortBy] : opt(a.data, sortBy, 0))
-    let bv = sortBy === "date" ? (b.time === null ? 0 : b.time) : (sortBy in b ? b[sortBy] : opt(b.data, sortBy, 0))
+    let av = sortBy === 'date' ? (a.time === null ? 0 : a.time) : (sortBy in a ? a[sortBy] : opt(a.data, sortBy, 0))
+    let bv = sortBy === 'date' ? (b.time === null ? 0 : b.time) : (sortBy in b ? b[sortBy] : opt(b.data, sortBy, 0))
     if (av === bv) { return a.slug < b.slug ? -1 : 1 }
     let r = av < bv ? -1 : 1
     return desc ? -r : r
@@ -94,10 +94,10 @@ export async fn loadCollection(name, cfg) {
 
 export async fn loadCollections(cfg) {
   let out = {}
-  let defs = opt(cfg, "collections", {})
+  let defs = opt(cfg, 'collections', {})
   for (let name of Object.keys(defs)) {
     let c = defs[name] === null ? {} : defs[name]
-    if (!("trailingSlash" in c)) { c.trailingSlash = opt(cfg, "trailingSlash", true) }
+    if (!('trailingSlash' in c)) { c.trailingSlash = opt(cfg, 'trailingSlash', true) }
     out[name] = await loadCollection(name, c)
   }
   return out
@@ -138,7 +138,7 @@ export fn slim(collections) {
   for (let name of Object.keys(collections)) {
     out[name] = collections[name].map(it => {
       let o = {}
-      for (let k of Object.keys(it)) { if (k !== "body") { o[k] = it[k] } }
+      for (let k of Object.keys(it)) { if (k !== 'body') { o[k] = it[k] } }
       return o
     })
   }

@@ -1,7 +1,7 @@
-import { defer, now } from "@tishlang/orbit"
+import { defer, now } from '@tishlang/orbit'
 
 // Server-rendered on every request, streamed: the shell flushes first, the slow part later.
-export let render = "server"
+export let render = 'server'
 export let stream = true
 
 async fn slow() {
@@ -9,13 +9,13 @@ async fn slow() {
   return <p class="text-green-600">Resolved at {new Date(now()).toISOString()}</p>
 }
 
-export fn head(ctx) { return { title: "Server time", noindex: true } }
+export fn head(ctx) { return { title: 'Server time', noindex: true } }
 export fn page(ctx) {
   return (
     <div class="space-y-4">
       <h1 class="text-3xl font-bold">Server time</h1>
-      <p>Rendered at {new Date(now()).toISOString()} for {ctx.path}{Object.keys(ctx.query).length > 0 ? " with query " + JSON.stringify(ctx.query) : ""}</p>
-      {defer(slow(), <p class="text-slate-400">{"Loading slow part\u2026"}</p>)}
+      <p>Rendered at {new Date(now()).toISOString()} for {ctx.path}{Object.keys(ctx.query).length > 0 ? ' with query ' + JSON.stringify(ctx.query) : ''}</p>
+      {defer(slow(), <p class="text-slate-400">{'Loading slow part\u2026'}</p>)}
     </div>
   )
 }

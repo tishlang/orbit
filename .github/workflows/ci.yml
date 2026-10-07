@@ -21,6 +21,9 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
+      - name: Lint
+        run: npm run lint
+
       - name: Unit tests
         run: npm test
 

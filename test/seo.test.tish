@@ -1,30 +1,30 @@
-import { describe, it, expect } from "tish:test"
-import { renderHead, renderSitemap, renderRss, absoluteUrl, articleLd } from "../src/core/seo.tish"
+import { describe, it, expect } from 'tish:test'
+import { renderHead, renderSitemap, renderRss, absoluteUrl, articleLd } from '../src/core/seo.tish'
 
-let site = { title: "Site", url: "https://s.la/", description: "D", author: "Dev" }
+let site = { title: 'Site', url: 'https://s.la/', description: 'D', author: 'Dev' }
 
-describe("seo", () => {
-  it("builds absolute urls", () => {
-    expect(absoluteUrl(site, "/a/")).toBe("https://s.la/a/")
-    expect(absoluteUrl(site, "https://x.y/z")).toBe("https://x.y/z")
+describe('seo', () => {
+  it('builds absolute urls', () => {
+    expect(absoluteUrl(site, '/a/')).toBe('https://s.la/a/')
+    expect(absoluteUrl(site, 'https://x.y/z')).toBe('https://x.y/z')
   })
-  it("renders head with title template, canonical, og, twitter, json-ld without nulls", () => {
-    let h = renderHead(site, "/p/", { title: "P", description: "desc <b>", image: "/i.png", type: "article", jsonLd: { "@type": "BlogPosting", image: null, name: "n" } })
-    expect(h.indexOf("<title>P · Site</title>") >= 0).toBe(true)
+  it('renders head with title template, canonical, og, twitter, json-ld without nulls', () => {
+    let h = renderHead(site, '/p/', { title: 'P', description: 'desc <b>', image: '/i.png', type: 'article', jsonLd: { '@type': 'BlogPosting', image: null, name: 'n' } })
+    expect(h.indexOf('<title>P · Site</title>') >= 0).toBe(true)
     expect(h.indexOf('<link rel="canonical" href="https://s.la/p/">') >= 0).toBe(true)
     expect(h.indexOf('<meta property="og:image" content="https://s.la/i.png">') >= 0).toBe(true)
     expect(h.indexOf('<meta name="description" content="desc">') >= 0).toBe(true)
     expect(h.indexOf('"image":null') >= 0).toBe(false)
     expect(h.indexOf('"name":"n"') >= 0).toBe(true)
-    expect(renderHead(site, "/", null).indexOf("<title>Site</title>") >= 0).toBe(true)
+    expect(renderHead(site, '/', null).indexOf('<title>Site</title>') >= 0).toBe(true)
   })
-  it("renders sitemap and rss", () => {
-    let sm = renderSitemap(site, [{ url: "/", lastmod: "2026-01-01" }])
-    expect(sm.indexOf("<loc>https://s.la/</loc><lastmod>2026-01-01</lastmod>") >= 0).toBe(true)
-    let items = [{ title: "T & co", url: "/t/", time: 0, excerpt: "e", html: "<p>x</p>", tags: ["a"] }]
-    let rss = renderRss(site, items, "/rss.xml")
-    expect(rss.indexOf("<title>T &amp; co</title>") >= 0).toBe(true)
-    expect(rss.indexOf("<pubDate>Thu, 01 Jan 1970 00:00:00 GMT</pubDate>") >= 0).toBe(true)
-    expect(rss.indexOf("<category>a</category>") >= 0).toBe(true)
+  it('renders sitemap and rss', () => {
+    let sm = renderSitemap(site, [{ url: '/', lastmod: '2026-01-01' }])
+    expect(sm.indexOf('<loc>https://s.la/</loc><lastmod>2026-01-01</lastmod>') >= 0).toBe(true)
+    let items = [{ title: 'T & co', url: '/t/', time: 0, excerpt: 'e', html: '<p>x</p>', tags: ['a'] }]
+    let rss = renderRss(site, items, '/rss.xml')
+    expect(rss.indexOf('<title>T &amp; co</title>') >= 0).toBe(true)
+    expect(rss.indexOf('<pubDate>Thu, 01 Jan 1970 00:00:00 GMT</pubDate>') >= 0).toBe(true)
+    expect(rss.indexOf('<category>a</category>') >= 0).toBe(true)
   })
 })

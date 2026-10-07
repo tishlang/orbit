@@ -2,28 +2,28 @@
 // block lists (- item), one level of nested maps, block scalars (| and >).
 fn scalar(raw) {
   let s = raw.trim()
-  if (s === "") { return "" }
+  if (s === '') { return '' }
   if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
     let inner = s.slice(1, s.length - 1)
-    if (s.startsWith('"')) { return inner.replaceAll('\\"', '"').replaceAll("\\n", "\n").replaceAll("\\\\", "\\") }
+    if (s.startsWith('"')) { return inner.replaceAll('\\"', '"').replaceAll('\\n', '\n').replaceAll('\\\\', '\\') }
     return inner.replaceAll("''", "'")
   }
-  if (s === "true") { return true }
-  if (s === "false") { return false }
-  if (s === "null" || s === "~") { return null }
+  if (s === 'true') { return true }
+  if (s === 'false') { return false }
+  if (s === 'null' || s === '~') { return null }
   if (/^-?\d+$/.test(s)) { return parseInt(s, 10) }
   if (/^-?\d+\.\d+$/.test(s)) { return parseFloat(s) }
-  if (s.startsWith("[") && s.endsWith("]")) {
+  if (s.startsWith('[') && s.endsWith(']')) {
     let inner = s.slice(1, s.length - 1).trim()
-    if (inner === "") { return [] }
+    if (inner === '') { return [] }
     return splitTop(inner).map(x => scalar(x))
   }
-  if (s.startsWith("{") && s.endsWith("}")) {
+  if (s.startsWith('{') && s.endsWith('}')) {
     let inner = s.slice(1, s.length - 1).trim()
     let o = {}
-    if (inner === "") { return o }
+    if (inner === '') { return o }
     for (let kv of splitTop(inner)) {
-      let ci = kv.indexOf(":")
+      let ci = kv.indexOf(':')
       if (ci > 0) { o[kv.slice(0, ci).trim()] = scalar(kv.slice(ci + 1)) }
     }
     return o
@@ -34,24 +34,24 @@ fn splitTop(s) {
   let out = []
   let depth = 0
   let q = null
-  let cur = ""
+  let cur = ''
   let i = 0
   while (i < s.length) {
     let c = s.charAt(i)
     if (q !== null) { cur = cur + c; if (c === q) { q = null } }
     else if (c === '"' || c === "'") { q = c; cur = cur + c }
-    else if (c === "[" || c === "{") { depth = depth + 1; cur = cur + c }
-    else if (c === "]" || c === "}") { depth = depth - 1; cur = cur + c }
-    else if (c === "," && depth === 0) { out.push(cur); cur = "" }
+    else if (c === '[' || c === '{') { depth = depth + 1; cur = cur + c }
+    else if (c === ']' || c === '}') { depth = depth - 1; cur = cur + c }
+    else if (c === ',' && depth === 0) { out.push(cur); cur = '' }
     else { cur = cur + c }
     i = i + 1
   }
-  if (cur.trim() !== "") { out.push(cur) }
+  if (cur.trim() !== '') { out.push(cur) }
   return out
 }
 fn indentOf(line) {
   let i = 0
-  while (i < line.length && line.charAt(i) === " ") { i = i + 1 }
+  while (i < line.length && line.charAt(i) === ' ') { i = i + 1 }
   return i
 }
 fn stripComment(line) {
@@ -61,14 +61,14 @@ fn stripComment(line) {
     let c = line.charAt(i)
     if (q !== null) { if (c === q) { q = null } }
     else if (c === '"' || c === "'") { q = c }
-    else if (c === "#" && (i === 0 || line.charAt(i - 1) === " ")) { return line.slice(0, i) }
+    else if (c === '#' && (i === 0 || line.charAt(i - 1) === ' ')) { return line.slice(0, i) }
     i = i + 1
   }
   return line
 }
 
 export fn parseYaml(text) {
-  let lines = text.split("\n").map(l => l.replace(/\r$/, ""))
+  let lines = text.split('\n').map(l => l.replace(/\r$/, ''))
   let state = { i: 0 }
   return parseMap(lines, state, 0)
 }
@@ -77,13 +77,13 @@ fn parseMap(lines, st, indent) {
   while (st.i < lines.length) {
     let rawLine = lines[st.i]
     let line = stripComment(rawLine)
-    if (line.trim() === "") { st.i = st.i + 1; continue }
+    if (line.trim() === '') { st.i = st.i + 1; continue }
     let ind = indentOf(line)
     if (ind < indent) { return o }
     if (ind > indent) { st.i = st.i + 1; continue }
     let body = line.slice(ind)
-    if (body.startsWith("- ")) { return o }
-    let ci = body.indexOf(":")
+    if (body.startsWith('- ')) { return o }
+    let ci = body.indexOf(':')
     if (ci < 0) { st.i = st.i + 1; continue }
     let key = body.slice(0, ci).trim().replace(/^["']|["']$/g, "")
     let rest = body.slice(ci + 1)
@@ -175,24 +175,24 @@ fn yamlValue(v) {
   if (Array.isArray(v)) { return "[" + v.map(x => yamlValue(x)).join(", ") + "]" }
   if (typeof v === "object") { return JSON.stringify(v) }
   let s = String(v)
-  if (/^[A-Za-z0-9 _.\/,()'!?-]*$/.test(s) && !/^(true|false|null|~|-?\d+(\.\d+)?)$/.test(s) && s.trim() === s && s !== "" && s.indexOf(": ") < 0 && s.indexOf(" #") < 0) { return s }
+  if (/^[A-Za-z0-9 _.\/,()'!?-]*$/.test(s) && !/^(true|false|null|~|-?\d+(\.\d+)?)$/.test(s) && s.trim() === s && s !== '' && s.indexOf(': ') < 0 && s.indexOf(' #') < 0) { return s }
   return JSON.stringify(s)
 }
 export fn stringifyFrontmatter(data, content) {
   let lines = []
   for (let k of Object.keys(data)) {
     let v = data[k]
-    if (Array.isArray(v) && v.length > 0 && typeof v[0] === "object" && v[0] !== null) {
-      lines.push(k + ":")
+    if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && v[0] !== null) {
+      lines.push(k + ':')
       for (let it of v) {
         let ks = Object.keys(it)
         let first = true
-        for (let kk of ks) { lines.push((first ? "  - " : "    ") + kk + ": " + yamlValue(it[kk])); first = false }
+        for (let kk of ks) { lines.push((first ? '  - ' : '    ') + kk + ': ' + yamlValue(it[kk])); first = false }
       }
-    } else if (typeof v === "object" && v !== null && !Array.isArray(v)) {
-      lines.push(k + ":")
-      for (let kk of Object.keys(v)) { lines.push("  " + kk + ": " + yamlValue(v[kk])) }
-    } else { lines.push(k + ": " + yamlValue(v)) }
+    } else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+      lines.push(k + ':')
+      for (let kk of Object.keys(v)) { lines.push('  ' + kk + ': ' + yamlValue(v[kk])) }
+    } else { lines.push(k + ': ' + yamlValue(v)) }
   }
-  return "---\n" + lines.join("\n") + "\n---\n" + content
+  return '---\n' + lines.join('\n') + '\n---\n' + content
 }

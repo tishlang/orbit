@@ -1,25 +1,25 @@
-import { describe, it, expect } from "tish:test"
-import { h, raw, defer, Fragment, renderToString, renderToChunks } from "../src/core/render.tish"
+import { describe, it, expect } from 'tish:test'
+import { h, raw, defer, Fragment, renderToString, renderToChunks } from '../src/core/render.tish'
 
-fn Card(props) { return h("div", { class: "card" }, props.title, props.children) }
+fn Card(props) { return h('div', { class: 'card' }, props.title, props.children) }
 
-describe("render", () => {
-  it("renders elements, escapes text and attrs, handles void tags", async () => {
-    let html = await renderToString(h("div", { class: "a", id: "x<y", hidden: true, data_n: 3 }, "<b>", h("br", null), h("img", { src: "/x.png" })))
+describe('render', () => {
+  it('renders elements, escapes text and attrs, handles void tags', async () => {
+    let html = await renderToString(h('div', { class: 'a', id: 'x<y', hidden: true, data_n: 3 }, '<b>', h('br', null), h('img', { src: '/x.png' })))
     expect(html).toBe('<div class="a" id="x&lt;y" hidden data-n="3">&lt;b&gt;<br><img src="/x.png"></div>')
   })
-  it("supports raw, fragments, components, arrays, null/false, class arrays and style objects", async () => {
-    let html = await renderToString(h(Fragment, null, raw("<i>r</i>"), h(Card, { title: "T" }, h("span", null, "c")), [1, 2].map(n => h("b", null, n)), null, false, h("p", { class: ["a", null, "b"], style: { marginTop: "1px", color: "red" } })))
+  it('supports raw, fragments, components, arrays, null/false, class arrays and style objects', async () => {
+    let html = await renderToString(h(Fragment, null, raw('<i>r</i>'), h(Card, { title: 'T' }, h('span', null, 'c')), [1, 2].map(n => h('b', null, n)), null, false, h('p', { class: ['a', null, 'b'], style: { marginTop: '1px', color: 'red' } })))
     expect(html).toBe('<i>r</i><div class="card">T<span>c</span></div><b>1</b><b>2</b><p class="a b" style="margin-top:1px;color:red;"></p>')
   })
-  it("awaits deferred boundaries in renderToString", async () => {
-    let p = Promise.resolve(h("em", null, "late"))
-    let html = await renderToString(h("div", null, defer(p, h("span", null, "wait"))))
-    expect(html).toBe("<div><em>late</em></div>")
+  it('awaits deferred boundaries in renderToString', async () => {
+    let p = Promise.resolve(h('em', null, 'late'))
+    let html = await renderToString(h('div', null, defer(p, h('span', null, 'wait'))))
+    expect(html).toBe('<div><em>late</em></div>')
   })
-  it("streams deferred boundaries as chunks", async () => {
-    let p = Promise.resolve(h("em", null, "late"))
-    let chunks = renderToChunks(h("div", null, defer(p, h("span", null, "wait"))))
+  it('streams deferred boundaries as chunks', async () => {
+    let p = Promise.resolve(h('em', null, 'late'))
+    let chunks = renderToChunks(h('div', null, defer(p, h('span', null, 'wait'))))
     expect(chunks.length).toBe(2)
     expect(chunks[0]).toBe('<div><div id="orbit-d0" data-orbit-defer><span>wait</span></div></div>')
     let second = await chunks[1]

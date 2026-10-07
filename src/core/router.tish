@@ -3,9 +3,9 @@
 
 export fn fileToRoute(file) {
   // file is relative to pages/, e.g. "blog/[slug].tish"
-  let p = file.replace(/\.(tish?|md)$/, "")
-  let segs = p.split("/").filter(s => s !== "")
-  if (segs.length > 0 && segs[segs.length - 1] === "index") { segs.pop() }
+  let p = file.replace(/\.(tish?|md)$/, '')
+  let segs = p.split('/').filter(s => s !== '')
+  if (segs.length > 0 && segs[segs.length - 1] === 'index') { segs.pop() }
   let params = []
   let pattern = []
   let regexParts = []
@@ -13,17 +13,17 @@ export fn fileToRoute(file) {
   for (let s of segs) {
     let ca = /^\[\.\.\.([A-Za-z0-9_]+)\]$/.exec(s)
     let dy = /^\[([A-Za-z0-9_]+)\]$/.exec(s)
-    if (ca !== null) { params.push(ca[1]); pattern.push("*" + ca[1]); regexParts.push("(.+?)"); dynamic = dynamic + 10 }
-    else if (dy !== null) { params.push(dy[1]); pattern.push(":" + dy[1]); regexParts.push("([^/]+)"); dynamic = dynamic + 1 }
-    else { pattern.push(s); regexParts.push(s.replace(/[.*+?^${}()|\[\]\\]/g, "\\$&")) }
+    if (ca !== null) { params.push(ca[1]); pattern.push('*' + ca[1]); regexParts.push('(.+?)'); dynamic = dynamic + 10 }
+    else if (dy !== null) { params.push(dy[1]); pattern.push(':' + dy[1]); regexParts.push('([^/]+)'); dynamic = dynamic + 1 }
+    else { pattern.push(s); regexParts.push(s.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&')) }
   }
-  let path = "/" + pattern.join("/")
-  let re = "^/" + regexParts.join("/") + (regexParts.length > 0 ? "/?" : "") + "$"
+  let path = '/' + pattern.join('/')
+  let re = '^/' + regexParts.join('/') + (regexParts.length > 0 ? '/?' : '') + '$'
   return { path: path, params: params, regex: re, depth: segs.length, dynamic: dynamic, catchAll: dynamic >= 10 }
 }
 
 export fn matchRoute(routes, pathname) {
-  let p = pathname === "" ? "/" : pathname
+  let p = pathname === '' ? '/' : pathname
   for (let r of routes) {
     let m = new RegExp(r.regex).exec(p)
     if (m !== null) {
@@ -51,7 +51,7 @@ export fn fillPath(pattern, params) {
   let out = pattern
   for (let k of Object.keys(params)) {
     let v = params[k]
-    out = out.replace("*" + k, Array.isArray(v) ? v.join("/") : String(v)).replace(":" + k, encodeURIComponent(String(v)))
+    out = out.replace('*' + k, Array.isArray(v) ? v.join('/') : String(v)).replace(':' + k, encodeURIComponent(String(v)))
   }
   return out
 }
@@ -59,28 +59,28 @@ export fn fillPath(pattern, params) {
 // Vercel-style route src for config.json (regex over the path).
 export fn toVercelSrc(route) {
   let re = route.regex
-  return re.replace(/\/\?\$$/, "/?$")
+  return re.replace(/\/\?\$$/, '/?$')
 }
 
 // Redirect matching: entries { from, to, status }; `from` may contain :param or * suffix.
 export fn matchRedirect(redirects, pathname) {
   for (let r of redirects) {
     let from = r.from
-    if (from.endsWith("*")) {
+    if (from.endsWith('*')) {
       let base = from.slice(0, from.length - 1)
       if (pathname.startsWith(base)) {
         let rest = pathname.slice(base.length)
-        return { to: r.to.endsWith("*") ? r.to.slice(0, r.to.length - 1) + rest : r.to, status: "status" in r && r.status !== null ? r.status : 301 }
+        return { to: r.to.endsWith('*') ? r.to.slice(0, r.to.length - 1) + rest : r.to, status: 'status' in r && r.status !== null ? r.status : 301 }
       }
       continue
     }
-    if (from.indexOf(":") >= 0) {
-      let fr = fileToRoute(from.slice(1).replace(/:([A-Za-z0-9_]+)/g, "[$1]") + "/index")
+    if (from.indexOf(':') >= 0) {
+      let fr = fileToRoute(from.slice(1).replace(/:([A-Za-z0-9_]+)/g, '[$1]') + '/index')
       let m = matchRoute([fr], pathname)
-      if (m !== null) { return { to: fillPath(r.to, m.params), status: "status" in r && r.status !== null ? r.status : 301 } }
+      if (m !== null) { return { to: fillPath(r.to, m.params), status: 'status' in r && r.status !== null ? r.status : 301 } }
       continue
     }
-    if (from === pathname || from + "/" === pathname || from === pathname + "/") { return { to: r.to, status: "status" in r && r.status !== null ? r.status : 301 } }
+    if (from === pathname || from + '/' === pathname || from === pathname + '/') { return { to: r.to, status: 'status' in r && r.status !== null ? r.status : 301 } }
   }
   return null
 }

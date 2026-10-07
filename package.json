@@ -39,7 +39,8 @@
   ],
   "scripts": {
     "test": "tish test test/",
-    "test:e2e": "node test/e2e.mjs"
+    "test:e2e": "node test/e2e.mjs",
+    "lint": "tish-lint --deny-warnings src test templates/default"
   },
   "dependencies": {
     "@tishlang/tishdoc-parse": "0.1.0",
@@ -49,7 +50,8 @@
     "@tishlang/tish": ">=3.15.3"
   },
   "devDependencies": {
-    "@tishlang/tish": "3.15.3"
+    "@tishlang/tish": "3.15.3",
+    "@tishlang/tish-lint": "^3.15.3"
   },
   "publishConfig": {
     "access": "public"
