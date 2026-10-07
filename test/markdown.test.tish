@@ -1,24 +1,24 @@
-import { describe, it, expect } from "tish:test"
-import { renderMarkdown } from "../src/core/markdown.tish"
+import { describe, it, expect } from 'tish:test'
+import { renderMarkdown } from '../src/core/markdown.tish'
 
-describe("markdown", () => {
-  it("renders gfm with heading ids", () => {
-    let r = renderMarkdown("# Hello World\n\nSome *text*.\n\n## Hello World\n", null)
+describe('markdown', () => {
+  it('renders gfm with heading ids', () => {
+    let r = renderMarkdown('# Hello World\n\nSome *text*.\n\n## Hello World\n', null)
     expect(r.html.indexOf('<h1 id="hello-world">') >= 0).toBe(true)
     expect(r.html.indexOf('<h2 id="hello-world-2">') >= 0).toBe(true)
     expect(r.headings.length).toBe(2)
   })
-  it("passes trusted html through and strips comments", () => {
-    let r = renderMarkdown("Intro with <br> and <a href=\"/x\">link</a>.\n\n<!-- more -->\n\n<hr>\n\n<div class=\"c\">\n<img src=\"/i.png\">\n</div>\n\nAfter.", null)
-    expect(r.html.indexOf("<br>") >= 0).toBe(true)
+  it('passes trusted html through and strips comments', () => {
+    let r = renderMarkdown('Intro with <br> and <a href="/x">link</a>.\n\n<!-- more -->\n\n<hr>\n\n<div class="c">\n<img src="/i.png">\n</div>\n\nAfter.', null)
+    expect(r.html.indexOf('<br>') >= 0).toBe(true)
     expect(r.html.indexOf('<a href="/x">link</a>') >= 0).toBe(true)
-    expect(r.html.indexOf("&lt;") >= 0).toBe(false)
-    expect(r.html.indexOf("<!--") >= 0).toBe(false)
+    expect(r.html.indexOf('&lt;') >= 0).toBe(false)
+    expect(r.html.indexOf('<!--') >= 0).toBe(false)
     expect(r.html.indexOf('<div class="c">') >= 0).toBe(true)
-    expect(r.html.indexOf("<p>After.</p>") >= 0).toBe(true)
+    expect(r.html.indexOf('<p>After.</p>') >= 0).toBe(true)
   })
-  it("can escape html when asked", () => {
-    let r = renderMarkdown("x <b>y</b>", { html: false })
-    expect(r.html.indexOf("&lt;b&gt;") >= 0).toBe(true)
+  it('can escape html when asked', () => {
+    let r = renderMarkdown('x <b>y</b>', { html: false })
+    expect(r.html.indexOf('&lt;b&gt;') >= 0).toBe(true)
   })
 })

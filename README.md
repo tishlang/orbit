@@ -22,9 +22,9 @@ styles/*.css           your CSS, prepended to the generated utilities
 ## Pages
 
 ```tish
-import { raw, articleLd, formatDate } from "@tishlang/orbit"
+import { raw, articleLd, formatDate } from '@tishlang/orbit'
 
-export let render = "isr"        // "static" (default) | "server" | "isr"
+export let render = 'isr'        // "static" (default) | "server" | "isr"
 export let revalidate = 3600     // isr: seconds
 export let stream = false        // server/isr: flush the shell, stream defer() boundaries
 
@@ -32,9 +32,9 @@ export fn paths(ctx) { return ctx.collections.blog.map(p => ({ params: { slug: p
 export async fn load(ctx) {
   let post = ctx.bySlug(ctx.collections.blog, ctx.params.slug)
   if (post === null) { return { notFound: true } }        // or { redirect: "/x", status: 301, headers: { … } }
-  return { props: { post }, headers: { "x-custom": "1" } }
+  return { props: { post }, headers: { 'x-custom': '1' } }
 }
-export fn head(ctx, props) { return { title: props.post.title, description: props.post.excerpt, type: "article", jsonLd: articleLd(ctx.site, props.post, props.post.url) } }
+export fn head(ctx, props) { return { title: props.post.title, description: props.post.excerpt, type: 'article', jsonLd: articleLd(ctx.site, props.post, props.post.url) } }
 export fn page(ctx, props) { return <article>{raw(props.post.html)}</article> }
 ```
 
@@ -45,7 +45,7 @@ Layouts export `layout(ctx, children, props)` and optionally `head(ctx, props)`;
 ### Streaming
 
 ```tish
-export let render = "server"
+export let render = 'server'
 export let stream = true
 export fn page(ctx) { return <div>{defer(slowPromise(), <p>Loading…</p>)}</div> }
 ```
@@ -55,7 +55,7 @@ The shell flushes immediately; each `defer()` resolves out-of-order and swaps in
 ### Islands
 
 ```tish
-{island("counter", { start: 3 }, { load: "visible" })}     // idle (default) | visible | eager
+{island('counter', { start: 3 }, { load: 'visible' })}     // idle (default) | visible | eager
 ```
 
 `islands/counter.js` exports `default function mount(el, props)`. Islands are separate ES modules (natural code splitting); `.tish` islands are compiled to JS. Only pages that use islands ship the loader.
@@ -65,8 +65,8 @@ The shell flushes immediately; each `defer()` resolves out-of-order and swaps in
 Site code never imports `tish:*` or `node:*` (they cannot run on the JS target). Use the host shim:
 
 ```tish
-import { fetch, readFile, env } from "@tishlang/orbit"
-export async fn load(ctx) { let r = await fetch("https://api.github.com/…", { headers: { authorization: "bearer " + env("GITHUB_TOKEN") } }); return { props: await r.json() } }
+import { fetch, readFile, env } from '@tishlang/orbit'
+export async fn load(ctx) { let r = await fetch('https://api.github.com/…', { headers: { authorization: 'bearer ' + env('GITHUB_TOKEN') } }); return { props: await r.json() } }
 ```
 
 The same code runs natively under `tish run` (tests) and under Node/Vercel.
@@ -76,17 +76,17 @@ The same code runs natively under `tish run` (tests) and under Node/Vercel.
 ```tish
 export let site = {
   title, description, url, author, lang, twitter, image, icon, themeColor,
-  titleTemplate: "%s · Site",
-  feeds: { rss: "/rss.xml", atom: "/atom.xml", collections: ["blog"], limit: 30 },
-  collections: { blog: { dir: "content/blog", route: "/blog/:slug", sortBy: "date", desc: true, drafts: false } },
-  redirects: [{ from: "/old/*", to: "/new/*" }, { from: "/post/:id", to: "/blog/:id", status: 301 }],
+  titleTemplate: '%s · Site',
+  feeds: { rss: '/rss.xml', atom: '/atom.xml', collections: ['blog'], limit: 30 },
+  collections: { blog: { dir: 'content/blog', route: '/blog/:slug', sortBy: 'date', desc: true, drafts: false } },
+  redirects: [{ from: '/old/*', to: '/new/*' }, { from: '/post/:id', to: '/blog/:id', status: 301 }],
   trailingSlash: true,                  // default: /blog → /blog/ (308); false: /blog/ → /blog
-  tailwind: { theme: { colors: { brand: { "500": "#6366f1" } }, fonts: {}, screens: {} }, preflight: true },
-  styles: ["styles/base.css"],
+  tailwind: { theme: { colors: { brand: { '500': '#6366f1' } }, fonts: {}, screens: {} }, preflight: true },
+  styles: ['styles/base.css'],
   head: ['<link rel="preconnect" …>'], bodyEnd: [],
   prefetch: true,                       // hover / viewport link prefetch
-  sitemapExclude: ["/drafts/"], robots: ["Disallow: /admin"],
-  functionIncludes: ["content"]         // dirs copied into the server function
+  sitemapExclude: ['/drafts/'], robots: ['Disallow: /admin'],
+  functionIncludes: ['content']         // dirs copied into the server function
 }
 ```
 
@@ -111,3 +111,7 @@ On Vercel: framework preset **Other**, build command `npm run build`, no output 
 npm test           # unit tests (tish test test/)
 npm run test:e2e   # scaffold the template, build for node and Vercel, serve, and check the responses
 ```
+
+## License
+
+[MIT](LICENSE)

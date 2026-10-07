@@ -1,54 +1,54 @@
 // POSIX path helpers (Tish has no path module).
 export fn normalize(p) {
-  let abs = p.startsWith("/")
-  let parts = p.split("/")
+  let abs = p.startsWith('/')
+  let parts = p.split('/')
   let out = []
   let i = 0
   while (i < parts.length) {
     let s = parts[i]
-    if (s === "" || s === ".") { i = i + 1; continue }
-    if (s === "..") { if (out.length > 0 && out[out.length - 1] !== "..") { out.pop() } else if (!abs) { out.push("..") } }
+    if (s === '' || s === '.') { i = i + 1; continue }
+    if (s === '..') { if (out.length > 0 && out[out.length - 1] !== '..') { out.pop() } else if (!abs) { out.push('..') } }
     else { out.push(s) }
     i = i + 1
   }
-  let r = out.join("/")
-  return abs ? "/" + r : (r === "" ? "." : r)
+  let r = out.join('/')
+  return abs ? '/' + r : (r === '' ? '.' : r)
 }
 export fn join(...parts) {
-  let s = parts.filter(p => p !== null && p !== "").join("/")
+  let s = parts.filter(p => p !== null && p !== '').join('/')
   return normalize(s)
 }
 export fn dirname(p) {
-  let i = p.lastIndexOf("/")
-  if (i < 0) { return "." }
-  if (i === 0) { return "/" }
+  let i = p.lastIndexOf('/')
+  if (i < 0) { return '.' }
+  if (i === 0) { return '/' }
   return p.slice(0, i)
 }
 export fn basename(p, ext) {
-  let i = p.lastIndexOf("/")
+  let i = p.lastIndexOf('/')
   let b = i < 0 ? p : p.slice(i + 1)
-  if (ext !== null && ext !== "" && b.endsWith(ext)) { b = b.slice(0, b.length - ext.length) }
+  if (ext !== null && ext !== '' && b.endsWith(ext)) { b = b.slice(0, b.length - ext.length) }
   return b
 }
 export fn extname(p) {
   let b = basename(p, null)
-  let i = b.lastIndexOf(".")
-  if (i <= 0) { return "" }
+  let i = b.lastIndexOf('.')
+  if (i <= 0) { return '' }
   return b.slice(i)
 }
 export fn relative(from, to) {
-  let f = normalize(from).split("/").filter(s => s !== "" && s !== ".")
-  let t = normalize(to).split("/").filter(s => s !== "" && s !== ".")
+  let f = normalize(from).split('/').filter(s => s !== '' && s !== '.')
+  let t = normalize(to).split('/').filter(s => s !== '' && s !== '.')
   let i = 0
   while (i < f.length && i < t.length && f[i] === t[i]) { i = i + 1 }
   let up = []
   let j = i
-  while (j < f.length) { up.push(".."); j = j + 1 }
+  while (j < f.length) { up.push('..'); j = j + 1 }
   let rest = t.slice(i)
-  let r = up.concat(rest).join("/")
-  return r === "" ? "." : r
+  let r = up.concat(rest).join('/')
+  return r === '' ? '.' : r
 }
 export fn stripExt(p) {
   let e = extname(p)
-  return e === "" ? p : p.slice(0, p.length - e.length)
+  return e === '' ? p : p.slice(0, p.length - e.length)
 }

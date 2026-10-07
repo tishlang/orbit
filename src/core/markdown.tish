@@ -1,22 +1,22 @@
-import { parseDocument } from "@tishlang/tishdoc-parse"
-import { renderToHtmlFragment } from "@tishlang/tishdoc-render-html"
-import { slugify, stripTags } from "../util/html.tish"
+import { parseDocument } from '@tishlang/tishdoc-parse'
+import { renderToHtmlFragment } from '@tishlang/tishdoc-render-html'
+import { slugify, stripTags } from '../util/html.tish'
 
 // tishdoc-render-html escapes raw HTML (safe by design). Content authored by the site owner is
 // trusted, so block-level and inline HTML is lifted out before parsing and restored afterwards.
 fn liftHtml(src) {
   let blocks = []
   let inlines = []
-  let text = src.replace(/<!--[\s\S]*?-->/g, "")
+  let text = src.replace(/<!--[\s\S]*?-->/g, '')
   // block html: a run of lines that starts with a tag on its own line, ended by a blank line
   text = text.replace(/(^|\n\n)(<(?:div|p|a|img|iframe|video|table|ul|ol|hr|br|figure|blockquote|section|pre|script|h[1-6]|center|span|em|strong|b|i|small|details|summary)[\s>\/][\s\S]*?)(?=\n\n|$)/g, (m, lead, html) => {
     blocks.push(html)
-    return lead + "ORBITHTMLBLOCK" + (blocks.length - 1) + "END"
+    return lead + 'ORBITHTMLBLOCK' + (blocks.length - 1) + 'END'
   })
   // inline html tags inside paragraphs
   text = text.replace(/<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*?)?\/?>/g, (m) => {
     inlines.push(m)
-    return "ORBITHTMLINLINE" + (inlines.length - 1) + "END"
+    return 'ORBITHTMLINLINE' + (inlines.length - 1) + 'END'
   })
   return { text: text, blocks: blocks, inlines: inlines }
 }
@@ -29,7 +29,7 @@ fn restoreHtml(html, lifted) {
 
 // renderMarkdown(src, opts) -> { html, headings: [{level, text, id}] } ; opts.html === false disables passthrough
 export fn renderMarkdown(src, opts) {
-  let allowHtml = !(opts !== null && "html" in opts && opts.html === false)
+  let allowHtml = !(opts !== null && 'html' in opts && opts.html === false)
   let lifted = allowHtml ? liftHtml(src) : { text: src, blocks: [], inlines: [] }
   let pr = parseDocument(lifted.text, null)
   let html = renderToHtmlFragment(pr.ast)
@@ -39,10 +39,10 @@ export fn renderMarkdown(src, opts) {
   html = html.replace(/<h([1-6])>([\s\S]*?)<\/h\1>/g, (m, lvl, inner) => {
     let text = stripTags(inner)
     let id = slugify(text)
-    if (id === "") { id = "section" }
-    if (id in used) { used[id] = used[id] + 1; id = id + "-" + used[id] } else { used[id] = 1 }
+    if (id === '') { id = 'section' }
+    if (id in used) { used[id] = used[id] + 1; id = id + '-' + used[id] } else { used[id] = 1 }
     headings.push({ level: parseInt(lvl, 10), text: text, id: id })
-    return '<h' + lvl + ' id="' + id + '">' + inner + "</h" + lvl + ">"
+    return '<h' + lvl + ' id="' + id + '">' + inner + '</h' + lvl + '>'
   })
   return { html: html, headings: headings }
 }

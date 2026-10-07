@@ -1,20 +1,20 @@
 export let site = {
-  title: "Orbit Site",
-  description: "A hybrid markdown site built with @tishlang/orbit",
-  url: "https://example.com",
-  author: "You",
-  lang: "en",
-  themeColor: "#0f172a",
-  icon: "/favicon.svg",
-  feeds: { rss: "/rss.xml", atom: "/atom.xml", collections: ["blog"] },
+  title: 'Orbit Site',
+  description: 'A hybrid markdown site built with @tishlang/orbit',
+  url: 'https://example.com',
+  author: 'You',
+  lang: 'en',
+  themeColor: '#0f172a',
+  icon: '/favicon.svg',
+  feeds: { rss: '/rss.xml', atom: '/atom.xml', collections: ['blog'] },
   prefetch: true,
   collections: {
-    blog: { dir: "content/blog", route: "/blog/:slug", sortBy: "date", desc: true }
+    blog: { dir: 'content/blog', route: '/blog/:slug', sortBy: 'date', desc: true }
   },
   redirects: [
-    { from: "/posts/:slug", to: "/blog/:slug", status: 301 }
+    { from: '/posts/:slug', to: '/blog/:slug', status: 301 }
   ],
   tailwind: {
-    theme: { colors: { brand: { "500": "#6366f1", "600": "#4f46e5" } }, fonts: {} }
+    theme: { colors: { brand: { '500': '#6366f1', '600': '#4f46e5' } }, fonts: {} }
   }
 }

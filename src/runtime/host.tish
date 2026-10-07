@@ -9,7 +9,7 @@ let host = null
 export fn setHost(h) { host = h }
 export fn getHost() { return host }
 fn need() {
-  if (host === null) { throw new Error("orbit runtime: no host installed (call setHost)") }
+  if (host === null) { throw new Error('orbit runtime: no host installed (call setHost)') }
   return host
 }
 

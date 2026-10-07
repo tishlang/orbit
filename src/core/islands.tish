@@ -1,16 +1,16 @@
 // Client islands: interactive components shipped as separate ES modules.
 // island("name", props) renders a placeholder; the client loader mounts it.
-import { escapeAttr } from "../util/html.tish"
-import { raw } from "./render.tish"
+import { escapeAttr } from '../util/html.tish'
+import { raw } from './render.tish'
 
 export fn island(name, props, options) {
   let o = options === null ? {} : options
-  let tag = "tag" in o && o.tag !== null ? o.tag : "div"
-  let cls = "class" in o && o.class !== null ? ' class="' + escapeAttr(o.class) + '"' : ""
-  let load = "load" in o && o.load !== null ? o.load : "idle"   // idle | visible | eager
-  let ssr = "children" in o && o.children !== null ? o.children : ""
-  let json = JSON.stringify(props === null ? {} : props).replaceAll("</", "<\\/")
-  return raw("<" + tag + cls + ' data-island="' + escapeAttr(name) + '" data-load="' + load + '" data-props="' + escapeAttr(json) + '">' + ssr + "</" + tag + ">")
+  let tag = 'tag' in o && o.tag !== null ? o.tag : 'div'
+  let cls = 'class' in o && o.class !== null ? ' class="' + escapeAttr(o.class) + '"' : ''
+  let load = 'load' in o && o.load !== null ? o.load : 'idle'   // idle | visible | eager
+  let ssr = 'children' in o && o.children !== null ? o.children : ''
+  let json = JSON.stringify(props === null ? {} : props).replaceAll('</', '<\\/')
+  return raw('<' + tag + cls + ' data-island="' + escapeAttr(name) + '" data-load="' + load + '" data-props="' + escapeAttr(json) + '">' + ssr + '</' + tag + '>')
 }
 
 // Collect island names used in an HTML string.
@@ -27,13 +27,13 @@ export fn islandsIn(html) {
 
 // Script tags for a page: the loader plus modulepreload hints for used islands.
 export fn islandScripts(manifest, names, base) {
-  if (names.length === 0) { return "" }
-  let b = base === null ? "/_orbit" : base
+  if (names.length === 0) { return '' }
+  let b = base === null ? '/_orbit' : base
   let out = []
   for (let n of names) {
-    let file = n in manifest ? manifest[n] : (n + ".js")
-    out.push('<link rel="modulepreload" href="' + b + "/islands/" + file + '">')
+    let file = n in manifest ? manifest[n] : (n + '.js')
+    out.push('<link rel="modulepreload" href="' + b + '/islands/' + file + '">')
   }
   out.push('<script type="module" src="' + b + '/islands.js" data-manifest="' + escapeAttr(JSON.stringify(manifest)) + '"></script>')
-  return out.join("\n")
+  return out.join('\n')
 }

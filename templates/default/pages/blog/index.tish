@@ -1,4 +1,4 @@
-export fn head(ctx) { return { title: "Blog" } }
+export fn head(ctx) { return { title: 'Blog' } }
 export fn page(ctx) {
   return (
     <div>

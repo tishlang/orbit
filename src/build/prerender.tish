@@ -1,22 +1,22 @@
 // Prerenders static + isr routes into outDir. Returns a build manifest for the adapters.
-import { writeFile } from "../runtime/host.tish"
-import { fillPath } from "../core/router.tish"
-import { handle, collect, makeContext } from "../server/handler.tish"
-import { renderSitemap, renderRobots, renderRss, renderAtom } from "../core/seo.tish"
-import { join } from "../util/path.tish"
-import { toISODate } from "../util/date.tish"
+import { writeFile } from '../runtime/host.tish'
+import { fillPath } from '../core/router.tish'
+import { handle, collect, makeContext } from '../server/handler.tish'
+import { renderSitemap, renderRobots, renderRss, renderAtom } from '../core/seo.tish'
+import { join } from '../util/path.tish'
+import { toISODate } from '../util/date.tish'
 
 fn has(o, k) { return o !== null && k in o && o[k] !== null }
 
 fn outFile(outDir, path, contentType) {
-  if (contentType !== null && contentType.indexOf("text/html") < 0) {
+  if (contentType !== null && contentType.indexOf('text/html') < 0) {
     // non-html: write at the exact path (e.g. /rss.xml)
     return join(outDir, path)
   }
-  if (path === "/") { return join(outDir, "index.html") }
-  let p = path.endsWith("/") ? path.slice(0, path.length - 1) : path
-  if (p.lastIndexOf(".") > p.lastIndexOf("/")) { return join(outDir, p) }
-  return join(outDir, p, "index.html")
+  if (path === '/') { return join(outDir, 'index.html') }
+  let p = path.endsWith('/') ? path.slice(0, path.length - 1) : path
+  if (p.lastIndexOf('.') > p.lastIndexOf('/')) { return join(outDir, p) }
+  return join(outDir, p, 'index.html')
 }
 
 export async fn prerender(app, outDir, log) {
@@ -24,72 +24,72 @@ export async fn prerender(app, outDir, log) {
   let functions = []  // routes needing a server function: server + isr + dynamic without paths
   let sitemapUrls = []
   let site = app.site
-  let slash = !(has(site, "trailingSlash") && site.trailingSlash === false)
+  let slash = !(has(site, 'trailingSlash') && site.trailingSlash === false)
   for (let route of app.routes) {
     let page = route.page
-    if (page.render === "server") { functions.push({ path: route.path, regex: route.regex, mode: "server", file: route.file, stream: page.stream }); continue }
+    if (page.render === 'server') { functions.push({ path: route.path, regex: route.regex, mode: 'server', file: route.file, stream: page.stream }); continue }
     let paramSets = []
     if (route.params.length === 0) { paramSets.push({ params: {} }) }
     else if (page.paths !== null) {
       let ctx = makeContext(app, { path: route.path, query: {}, headers: {} }, {}, route)
       let ps = await page.paths(ctx)
-      for (let p of ps) { paramSets.push(has(p, "params") ? p : { params: p }) }
+      for (let p of ps) { paramSets.push(has(p, 'params') ? p : { params: p }) }
     }
-    if (page.render === "isr") { functions.push({ path: route.path, regex: route.regex, mode: "isr", revalidate: page.revalidate, file: route.file, stream: page.stream, fallback: null }) }
+    if (page.render === 'isr') { functions.push({ path: route.path, regex: route.regex, mode: 'isr', revalidate: page.revalidate, file: route.file, stream: page.stream, fallback: null }) }
     else if (route.params.length > 0 && page.paths === null) {
       // static dynamic route without paths(): cannot prerender; serve on demand
-      functions.push({ path: route.path, regex: route.regex, mode: "server", file: route.file, stream: page.stream })
+      functions.push({ path: route.path, regex: route.regex, mode: 'server', file: route.file, stream: page.stream })
       continue
     }
     for (let ps of paramSets) {
       let path = fillPath(route.path, ps.params)
-      if (slash && !path.endsWith("/") && path.lastIndexOf(".") < path.lastIndexOf("/")) { path = path + "/" }
-      let res = await handle(app, { path: path, query: {}, headers: {}, method: "GET" })
+      if (slash && !path.endsWith('/') && path.lastIndexOf('.') < path.lastIndexOf('/')) { path = path + '/' }
+      let res = await handle(app, { path: path, query: {}, headers: {}, method: 'GET' })
       let body = await collect(res)
       if (res.status >= 300 && res.status < 400) { continue }
-      let ct = has(res.headers, "content-type") ? res.headers["content-type"] : "text/html; charset=utf-8"
+      let ct = has(res.headers, 'content-type') ? res.headers['content-type'] : 'text/html; charset=utf-8'
       let file = outFile(outDir, path, ct)
       await writeFile(file, body)
       let entry = { path: path, file: file.slice(outDir.length + 1), mode: page.render, revalidate: page.revalidate, contentType: ct, status: res.status, headers: res.headers }
       pages.push(entry)
-      if (log !== null) { log("  " + (page.render === "isr" ? "λ" : "○") + " " + path) }
-      if (ct.indexOf("text/html") >= 0 && res.status === 200 && !(has(page, "sitemap") && page.sitemap === false)) {
+      if (log !== null) { log('  ' + (page.render === 'isr' ? 'λ' : '○') + ' ' + path) }
+      if (ct.indexOf('text/html') >= 0 && res.status === 200 && !(has(page, 'sitemap') && page.sitemap === false)) {
         let excluded = false
-        for (let ex of (has(site, "sitemapExclude") ? site.sitemapExclude : [])) { if (path.startsWith(ex)) { excluded = true } }
-        if (!excluded && !route.path.startsWith("/404")) { sitemapUrls.push({ url: path }) }
+        for (let ex of (has(site, 'sitemapExclude') ? site.sitemapExclude : [])) { if (path.startsWith(ex)) { excluded = true } }
+        if (!excluded && !route.path.startsWith('/404')) { sitemapUrls.push({ url: path }) }
       }
     }
   }
   // 404
   if (app.notFound !== null) {
-    let res = await handle(app, { path: "/__orbit_404__/", query: {}, headers: {}, method: "GET" })
-    await writeFile(join(outDir, "404.html"), await collect(res))
-    if (log !== null) { log("  ○ /404.html") }
+    let res = await handle(app, { path: '/__orbit_404__/', query: {}, headers: {}, method: 'GET' })
+    await writeFile(join(outDir, '404.html'), await collect(res))
+    if (log !== null) { log('  ○ /404.html') }
   }
   let claimed = {}
   for (let p of pages) { claimed[p.path] = true }
   // sitemap.xml + robots.txt
-  if (!("/sitemap.xml" in claimed) && has(site, "url")) {
+  if (!('/sitemap.xml' in claimed) && has(site, 'url')) {
     for (let name of Object.keys(app.content)) {
       for (let it of app.content[name]) {
         let found = false
         for (let u of sitemapUrls) { if (u.url === it.url) { found = true; u.lastmod = it.date === null ? null : toISODate(it.time) } }
       }
     }
-    await writeFile(join(outDir, "sitemap.xml"), renderSitemap(site, sitemapUrls))
-    if (log !== null) { log("  ○ /sitemap.xml") }
+    await writeFile(join(outDir, 'sitemap.xml'), renderSitemap(site, sitemapUrls))
+    if (log !== null) { log('  ○ /sitemap.xml') }
   }
-  if (!("/robots.txt" in claimed)) { await writeFile(join(outDir, "robots.txt"), renderRobots(site, has(site, "robots") ? site.robots : null)) }
+  if (!('/robots.txt' in claimed)) { await writeFile(join(outDir, 'robots.txt'), renderRobots(site, has(site, 'robots') ? site.robots : null)) }
   // feeds
-  if (has(site, "feeds")) {
+  if (has(site, 'feeds')) {
     let f = site.feeds
-    let names = has(f, "collections") ? f.collections : Object.keys(app.content)
+    let names = has(f, 'collections') ? f.collections : Object.keys(app.content)
     let items = []
     for (let n of names) { if (n in app.content) { for (let it of app.content[n]) { items.push(it) } } }
     items.sort((a, b) => (b.time === null ? 0 : b.time) - (a.time === null ? 0 : a.time))
-    items = items.slice(0, has(f, "limit") ? f.limit : 30)
-    if (has(f, "rss") && !(f.rss in claimed)) { await writeFile(join(outDir, f.rss), renderRss(site, items, f.rss)); if (log !== null) { log("  ○ " + f.rss) } }
-    if (has(f, "atom") && !(f.atom in claimed)) { await writeFile(join(outDir, f.atom), renderAtom(site, items, f.atom)); if (log !== null) { log("  ○ " + f.atom) } }
+    items = items.slice(0, has(f, 'limit') ? f.limit : 30)
+    if (has(f, 'rss') && !(f.rss in claimed)) { await writeFile(join(outDir, f.rss), renderRss(site, items, f.rss)); if (log !== null) { log('  ○ ' + f.rss) } }
+    if (has(f, 'atom') && !(f.atom in claimed)) { await writeFile(join(outDir, f.atom), renderAtom(site, items, f.atom)); if (log !== null) { log('  ○ ' + f.atom) } }
   }
-  return { pages: pages, functions: functions, redirects: has(site, "redirects") ? site.redirects : [] }
+  return { pages: pages, functions: functions, redirects: has(site, 'redirects') ? site.redirects : [] }
 }

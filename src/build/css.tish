@@ -1,15 +1,15 @@
-import { generate } from "../css/engine.tish"
-import { preflight } from "../css/preflight.tish"
+import { generate } from '../css/engine.tish'
+import { preflight } from '../css/preflight.tish'
 
 fn has(o, k) { return o !== null && k in o && o[k] !== null }
 
 // buildCss(site, sources: string[], userCss: string[]) -> css
 export fn buildCss(site, sources, userCss) {
-  let tw = has(site, "tailwind") ? site.tailwind : {}
-  let theme = has(tw, "theme") ? tw.theme : null
+  let tw = has(site, 'tailwind') ? site.tailwind : {}
+  let theme = has(tw, 'theme') ? tw.theme : null
   let parts = []
-  if (!(has(tw, "preflight") && tw.preflight === false)) { parts.push(preflight()) }
+  if (!(has(tw, 'preflight') && tw.preflight === false)) { parts.push(preflight()) }
   for (let c of userCss) { parts.push(c) }
   parts.push(generate(sources, theme, false))
-  return parts.join("\n")
+  return parts.join('\n')
 }

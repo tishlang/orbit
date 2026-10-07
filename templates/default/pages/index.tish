@@ -1,6 +1,6 @@
-import { island } from "@tishlang/orbit"
+import { island } from '@tishlang/orbit'
 
-export fn head(ctx) { return { title: "Home", rawTitle: false, description: ctx.site.description } }
+export fn head(ctx) { return { title: 'Home', rawTitle: false, description: ctx.site.description } }
 
 export fn page(ctx) {
   let posts = ctx.collections.blog.slice(0, 5)
@@ -13,12 +13,12 @@ export fn page(ctx) {
       <section>
         <h2 class="text-xl font-semibold mb-4">Latest posts</h2>
         <ul class="space-y-2">
-          {posts.map(p => <li><a class="underline hover:text-brand-500" href={p.url}>{p.title}</a> <span class="text-slate-500 text-sm">{p.date === null ? "" : p.date.slice(0, 10)}</span></li>)}
+          {posts.map(p => <li><a class="underline hover:text-brand-500" href={p.url}>{p.title}</a> <span class="text-slate-500 text-sm">{p.date === null ? '' : p.date.slice(0, 10)}</span></li>)}
         </ul>
       </section>
       <section>
         <h2 class="text-xl font-semibold mb-4">An island</h2>
-        {island("counter", { start: 3 }, { class: "inline-block rounded border p-3", load: "visible" })}
+        {island('counter', { start: 3 }, { class: 'inline-block rounded border p-3', load: 'visible' })}
       </section>
     </div>
   )

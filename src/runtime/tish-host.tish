@@ -1,8 +1,8 @@
 // Native host: run with `tish run --feature fs --feature http --feature process`.
-import { readFile as fsRead, readFileBytes as fsReadBytes, writeFile as fsWrite, readDir as fsReadDir, isDir as fsIsDir, fileExists as fsExists, mkdir as fsMkdir, rm as fsRm, copyFile as fsCopy, stat as fsStat } from "tish:fs"
-import { fetch as httpFetch } from "tish:http"
-import { process } from "tish:process"
-import { setHost } from "./host.tish"
+import { readFile as fsRead, readFileBytes as fsReadBytes, writeFile as fsWrite, readDir as fsReadDir, isDir as fsIsDir, fileExists as fsExists, mkdir as fsMkdir, rm as fsRm, copyFile as fsCopy, stat as fsStat } from 'tish:fs'
+import { fetch as httpFetch } from 'tish:http'
+import { process } from 'tish:process'
+import { setHost } from './host.tish'
 
 fn wrapResponse(res) {
   return {
@@ -30,7 +30,7 @@ export fn installTishHost() {
     env: fn (n) { return n in process.env ? process.env[n] : null },
     cwd: fn () { return process.cwd() },
     now: fn () { return Date.now() },
-    log: fn (args) { console.log(args.join(" ")) }
+    log: fn (args) { console.log(args.join(' ')) }
   })
 }
 

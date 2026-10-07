@@ -1,17 +1,17 @@
-export fn head(ctx) { return { image: "/og.png" } }
+export fn head(ctx) { return { image: '/og.png' } }
 
 export fn layout(ctx, children) {
-  let nav = [["/", "Home"], ["/blog/", "Blog"], ["/time/", "Time (SSR)"]]
+  let nav = [['/', 'Home'], ['/blog/', 'Blog'], ['/time/', 'Time (SSR)']]
   return (
     <div class="min-h-screen flex flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <header class="border-b border-slate-200 dark:border-slate-800">
         <nav class="container flex items-center gap-6 py-4">
           <a href="/" class="font-bold text-lg">{ctx.site.title}</a>
-          {nav.map(n => <a href={n[0]} class={ctx.path === n[0] ? "text-brand-600" : "hover:text-brand-500"}>{n[1]}</a>)}
+          {nav.map(n => <a href={n[0]} class={ctx.path === n[0] ? 'text-brand-600' : 'hover:text-brand-500'}>{n[1]}</a>)}
         </nav>
       </header>
       <main class="container flex-1 py-10">{children}</main>
-      <footer class="container py-8 text-sm text-slate-500">{"\u00a9 " + new Date().getFullYear() + " " + ctx.site.author}</footer>
+      <footer class="container py-8 text-sm text-slate-500">{'\u00a9 ' + new Date().getFullYear() + ' ' + ctx.site.author}</footer>
     </div>
   )
 }

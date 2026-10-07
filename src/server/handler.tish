@@ -1,11 +1,11 @@
 // Host-agnostic request handler. req: { method, path, query: {}, headers: {} }
 // Returns { status, headers, chunks: [string | Promise<string>] } or { status, headers, body }.
-import { matchRoute, matchRedirect } from "../core/router.tish"
-import { renderToString, renderToChunks, h, raw } from "../core/render.tish"
-import { renderHead } from "../core/seo.tish"
-import { islandsIn, islandScripts } from "../core/islands.tish"
-import { escapeHtml, escapeAttr } from "../util/html.tish"
-import { bySlug, byTag, paginate, allTags, allItems } from "../core/content.tish"
+import { matchRoute, matchRedirect } from '../core/router.tish'
+import { renderToString, renderToChunks, h, raw } from '../core/render.tish'
+import { renderHead } from '../core/seo.tish'
+import { islandsIn, islandScripts } from '../core/islands.tish'
+import { escapeHtml, escapeAttr } from '../util/html.tish'
+import { bySlug, byTag, paginate, allTags, allItems } from '../core/content.tish'
 
 fn has(o, k) { return o !== null && k in o && o[k] !== null }
 
@@ -14,9 +14,9 @@ export fn makeContext(app, req, params, route) {
     site: app.site,
     url: req.path,
     path: req.path,
-    query: has(req, "query") ? req.query : {},
-    headers: has(req, "headers") ? req.headers : {},
-    method: has(req, "method") ? req.method : "GET",
+    query: has(req, 'query') ? req.query : {},
+    headers: has(req, 'headers') ? req.headers : {},
+    method: has(req, 'method') ? req.method : 'GET',
     params: params,
     collections: app.content,
     data: app.data,
@@ -35,7 +35,7 @@ export fn makeContext(app, req, params, route) {
 fn mergeHead(layouts, page, ctx, props) {
   let meta = {}
   for (let l of layouts) {
-    if (has(l, "head")) {
+    if (has(l, 'head')) {
       let hm = l.head(ctx, props)
       if (hm !== null) { for (let k of Object.keys(hm)) { meta[k] = hm[k] } }
     }
@@ -52,8 +52,8 @@ fn applyLayouts(layouts, ctx, tree, props) {
   let i = layouts.length - 1
   while (i >= 0) {
     let l = layouts[i]
-    if (has(l, "layout")) { t = l.layout(ctx, t, props) }
-    else if (has(l, "default")) { t = l["default"](ctx, t, props) }
+    if (has(l, 'layout')) { t = l.layout(ctx, t, props) }
+    else if (has(l, 'default')) { t = l['default'](ctx, t, props) }
     i = i - 1
   }
   return t
@@ -64,27 +64,27 @@ export fn documentHead(app, ctx, meta) {
   let out = []
   out.push(renderHead(site, ctx.url, meta))
   out.push('<link rel="stylesheet" href="' + escapeAttr(app.css) + '">')
-  for (let x of (has(site, "head") ? site.head : [])) { out.push(x) }
+  for (let x of (has(site, 'head') ? site.head : [])) { out.push(x) }
   if (Object.keys(app.islands).length > 0) {
     out.push('<script type="module" src="' + app.base + '/islands.js" data-manifest="' + escapeAttr(JSON.stringify(app.islands)) + '"></script>')
   }
   if (app.dev) { out.push('<script src="' + app.base + '/livereload.js" defer></script>') }
-  if (has(site, "prefetch") && site.prefetch === true) { out.push('<script src="' + app.base + '/prefetch.js" defer></script>') }
-  return out.join("\n")
+  if (has(site, 'prefetch') && site.prefetch === true) { out.push('<script src="' + app.base + '/prefetch.js" defer></script>') }
+  return out.join('\n')
 }
 
 fn htmlAttrs(site, meta) {
-  let lang = has(site, "lang") ? site.lang : "en"
-  let cls = has(meta, "htmlClass") ? meta.htmlClass : (has(site, "htmlClass") ? site.htmlClass : null)
-  return ' lang="' + escapeAttr(lang) + '"' + (cls === null ? "" : ' class="' + escapeAttr(cls) + '"')
+  let lang = has(site, 'lang') ? site.lang : 'en'
+  let cls = has(meta, 'htmlClass') ? meta.htmlClass : (has(site, 'htmlClass') ? site.htmlClass : null)
+  return ' lang="' + escapeAttr(lang) + '"' + (cls === null ? '' : ' class="' + escapeAttr(cls) + '"')
 }
 fn bodyAttrs(site, meta) {
-  let cls = has(meta, "bodyClass") ? meta.bodyClass : (has(site, "bodyClass") ? site.bodyClass : null)
-  return cls === null ? "" : ' class="' + escapeAttr(cls) + '"'
+  let cls = has(meta, 'bodyClass') ? meta.bodyClass : (has(site, 'bodyClass') ? site.bodyClass : null)
+  return cls === null ? '' : ' class="' + escapeAttr(cls) + '"'
 }
 
 fn textResponse(status, body, type) {
-  return { status: status, headers: { "content-type": type === null ? "text/plain; charset=utf-8" : type }, chunks: [body] }
+  return { status: status, headers: { 'content-type': type === null ? 'text/plain; charset=utf-8' : type }, chunks: [body] }
 }
 
 export async fn renderRoute(app, route, req, params) {
@@ -94,33 +94,33 @@ export async fn renderRoute(app, route, req, params) {
   if (page.load !== null) {
     let r = await page.load(ctx)
     if (r !== null) {
-      if (has(r, "redirect")) {
+      if (has(r, 'redirect')) {
         let rh = { location: r.redirect }
-        if (has(r, "headers")) { for (let k of Object.keys(r.headers)) { rh[k.toLowerCase()] = r.headers[k] } }
-        return { status: has(r, "status") ? r.status : 302, headers: rh, chunks: [""] }
+        if (has(r, 'headers')) { for (let k of Object.keys(r.headers)) { rh[k.toLowerCase()] = r.headers[k] } }
+        return { status: has(r, 'status') ? r.status : 302, headers: rh, chunks: [''] }
       }
-      if (has(r, "notFound") && r.notFound === true) { return await renderNotFound(app, req) }
-      if (has(r, "props")) { props = r.props } else { props = r }
-      if (has(r, "status")) { ctx.status = r.status }
-      if (has(r, "headers")) { for (let k of Object.keys(r.headers)) { ctx.responseHeaders[k.toLowerCase()] = r.headers[k] } }
+      if (has(r, 'notFound') && r.notFound === true) { return await renderNotFound(app, req) }
+      if (has(r, 'props')) { props = r.props } else { props = r }
+      if (has(r, 'status')) { ctx.status = r.status }
+      if (has(r, 'headers')) { for (let k of Object.keys(r.headers)) { ctx.responseHeaders[k.toLowerCase()] = r.headers[k] } }
     }
   }
-  if (page.page === null) { return textResponse(500, "orbit: page module exports no `page` function: " + route.file, null) }
-  let headers = { "content-type": page.contentType }
+  if (page.page === null) { return textResponse(500, 'orbit: page module exports no `page` function: ' + route.file, null) }
+  let headers = { 'content-type': page.contentType }
   for (let k of Object.keys(ctx.responseHeaders)) { headers[k] = ctx.responseHeaders[k] }
   if (page.headers !== null) { for (let k of Object.keys(page.headers)) { headers[k.toLowerCase()] = page.headers[k] } }
-  if (page.render === "isr" && page.revalidate !== null && !has(headers, "cache-control")) {
-    headers["cache-control"] = "s-maxage=" + page.revalidate + ", stale-while-revalidate"
+  if (page.render === 'isr' && page.revalidate !== null && !has(headers, 'cache-control')) {
+    headers['cache-control'] = 's-maxage=' + page.revalidate + ', stale-while-revalidate'
   }
   let result = page.page(ctx, props)
-  if (result !== null && typeof result === "object" && typeof result.then === "function") { result = await result }
+  if (result !== null && typeof result === 'object' && typeof result.then === 'function') { result = await result }
   // Non-HTML pages return a string (feeds, sitemaps, JSON).
-  if (typeof result === "string") { return { status: ctx.status, headers: headers, chunks: [result] } }
+  if (typeof result === 'string') { return { status: ctx.status, headers: headers, chunks: [result] } }
   let tree = page.layout === false ? result : applyLayouts(route.layouts, ctx, result, props)
   let meta = mergeHead(route.layouts, page, ctx, props)
   let head = documentHead(app, ctx, meta)
-  let open = "<!doctype html>\n<html" + htmlAttrs(app.site, meta) + ">\n<head>\n" + head + "\n</head>\n<body" + bodyAttrs(app.site, meta) + ">\n"
-  let close = (has(app.site, "bodyEnd") ? app.site.bodyEnd.join("\n") : "") + "\n</body>\n</html>\n"
+  let open = '<!doctype html>\n<html' + htmlAttrs(app.site, meta) + '>\n<head>\n' + head + '\n</head>\n<body' + bodyAttrs(app.site, meta) + '>\n'
+  let close = (has(app.site, 'bodyEnd') ? app.site.bodyEnd.join('\n') : '') + '\n</body>\n</html>\n'
   if (page.stream) {
     let chunks = renderToChunks(tree)
     let all = [open + chunks[0]]
@@ -139,29 +139,29 @@ export async fn renderNotFound(app, req) {
     r.status = 404
     return r
   }
-  return textResponse(404, "Not found: " + req.path, null)
+  return textResponse(404, 'Not found: ' + req.path, null)
 }
 
 // "?a=1&b=2" from req.query, or "" when there is none.
 fn queryString(req) {
-  if (!has(req, "query")) { return "" }
+  if (!has(req, 'query')) { return '' }
   let keys = Object.keys(req.query)
-  if (keys.length === 0) { return "" }
-  return "?" + keys.map(k => encodeURIComponent(k) + "=" + encodeURIComponent(req.query[k])).join("&")
+  if (keys.length === 0) { return '' }
+  return '?' + keys.map(k => encodeURIComponent(k) + '=' + encodeURIComponent(req.query[k])).join('&')
 }
 
 export async fn handle(app, req) {
   let path = req.path
-  let redirects = has(app.site, "redirects") ? app.site.redirects : []
+  let redirects = has(app.site, 'redirects') ? app.site.redirects : []
   let rd = matchRedirect(redirects, path)
-  if (rd !== null) { return { status: rd.status, headers: { location: rd.to }, chunks: [""] } }
+  if (rd !== null) { return { status: rd.status, headers: { location: rd.to }, chunks: [''] } }
   // Trailing-slash normalization, as on Vercel: site.trailingSlash (default true) sends /blog to
   // /blog/; false sends /blog/ to /blog. Paths with an extension (files) are left alone.
-  let slash = !(has(app.site, "trailingSlash") && app.site.trailingSlash === false)
-  let isFile = path.lastIndexOf(".") > path.lastIndexOf("/")
-  if (path.length > 1 && !isFile && slash !== path.endsWith("/") && matchRoute(app.routes, path) !== null) {
-    let to = slash ? path + "/" : path.slice(0, path.length - 1)
-    return { status: 308, headers: { location: to + queryString(req) }, chunks: [""] }
+  let slash = !(has(app.site, 'trailingSlash') && app.site.trailingSlash === false)
+  let isFile = path.lastIndexOf('.') > path.lastIndexOf('/')
+  if (path.length > 1 && !isFile && slash !== path.endsWith('/') && matchRoute(app.routes, path) !== null) {
+    let to = slash ? path + '/' : path.slice(0, path.length - 1)
+    return { status: 308, headers: { location: to + queryString(req) }, chunks: [''] }
   }
   let m = matchRoute(app.routes, path)
   if (m === null) { return await renderNotFound(app, req) }
@@ -170,7 +170,7 @@ export async fn handle(app, req) {
 
 // Resolve every chunk to a single string (for prerender / non-streaming hosts).
 export async fn collect(res) {
-  let out = ""
-  for (let c of res.chunks) { out = out + (typeof c === "string" ? c : await c) }
+  let out = ''
+  for (let c of res.chunks) { out = out + (typeof c === 'string' ? c : await c) }
   return out
 }
