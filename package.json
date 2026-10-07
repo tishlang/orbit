@@ -43,8 +43,8 @@
     "lint": "tish-lint --deny-warnings src test templates/default"
   },
   "dependencies": {
-    "@tishlang/tishdoc-parse": "0.1.0",
-    "@tishlang/tishdoc-render-html": "0.1.0"
+    "@tishlang/tishdoc-parse": "^1.0.0",
+    "@tishlang/tishdoc-render-html": "^1.0.0"
   },
   "peerDependencies": {
     "@tishlang/tish": ">=3.15.3"
