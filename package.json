@@ -47,11 +47,11 @@
     "@tishlang/tishdoc-render-html": "^1.0.0"
   },
   "peerDependencies": {
-    "@tishlang/tish": ">=3.15.3"
+    "@tishlang/tish": ">=4.0.1"
   },
   "devDependencies": {
-    "@tishlang/tish": "3.15.3",
-    "@tishlang/tish-lint": "^3.15.3"
+    "@tishlang/tish": "4.0.1",
+    "@tishlang/tish-lint": "^4.0.1"
   },
   "publishConfig": {
     "access": "public"
