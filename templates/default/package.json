@@ -11,7 +11,7 @@
     "@tishlang/orbit": "^0.1.0"
   },
   "devDependencies": {
-    "@tishlang/tish": "3.15.3"
+    "@tishlang/tish": "4.0.1"
   },
   "allowScripts": {
     "@tishlang/tish": true
