@@ -36,5 +36,39 @@ export async function compileEsm(root, entry, outDir, extra = []) {
   const { out } = await tish(root, ['build', entry, '-o', outDir, '--target', 'js', '--format', 'esm', '--jsx-import-source', '@tishlang/orbit', ...extra])
   const m = /Entry:\s*(.+)/.exec(out)
   if (!m) throw new Error('tish build did not report an entry file:\n' + out)
+  markEsm(outDir)
   return path.resolve(root, m[1].trim())
+}
+
+// The compiled packages under <outDir>/node_modules (@tishlang/orbit, …) are ES modules, but tish
+// writes them without a package.json. Node never looks past a node_modules folder for one, so it
+// takes them for CommonJS, and stricter loaders (Vercel's Node runtime) then fail on their named
+// exports ("Named export 'Fragment' not found"). Give each package folder {"type": "module"}.
+function markEsm(outDir) {
+  const mark = dir => {
+    const pj = path.join(dir, 'package.json')
+    if (!fs.existsSync(pj)) fs.writeFileSync(pj, JSON.stringify({ type: 'module' }) + '\n')
+  }
+  const isDir = p => fs.statSync(p).isDirectory()
+  const walk = dir => {
+    for (const name of fs.readdirSync(dir)) {
+      const p = path.join(dir, name)
+      if (!isDir(p)) continue
+      if (name === 'node_modules') {
+        for (const pkg of fs.readdirSync(p)) {
+          const pp = path.join(p, pkg)
+          if (!isDir(pp)) continue
+          if (pkg.startsWith('@')) {
+            for (const sub of fs.readdirSync(pp)) if (isDir(path.join(pp, sub))) { mark(path.join(pp, sub)); walk(path.join(pp, sub)) }
+          } else {
+            mark(pp)
+            walk(pp)
+          }
+        }
+      } else {
+        walk(p)
+      }
+    }
+  }
+  walk(outDir)
 }

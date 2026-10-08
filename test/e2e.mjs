@@ -77,6 +77,10 @@ console.log('trailingSlash: true (default)')
   check(cfg.version === 3, 'vercel config v3', cfg.version)
   check(cfg.routes.some(x => x.status === 308 && x.headers?.Location === '/$1/'), 'vercel adds the trailing slash', null)
   check(fs.existsSync(path.join(dir, '.vercel', 'output', 'functions', '_orbit.func', 'index.mjs')), 'vercel server function', null)
+  const unmarked = []
+  const scan = d => { for (const n of fs.readdirSync(d)) { const p = path.join(d, n); if (!fs.statSync(p).isDirectory()) continue; if (path.basename(d) === 'node_modules' || path.basename(path.dirname(d)) === 'node_modules' && path.basename(d).startsWith('@')) { if (!n.startsWith('@') && !fs.existsSync(path.join(p, 'package.json'))) unmarked.push(p) } scan(p) } }
+  scan(path.join(dir, '.vercel', 'output', 'functions', '_orbit.func', 'server'))
+  check(unmarked.length === 0, 'compiled packages are marked as ES modules', unmarked)
   check(fs.existsSync(path.join(dir, '.vercel', 'output', 'static', 'index.html')), 'vercel static pages', null)
   // The function Vercel runs, behind a plain Node server.
   const fn = (await import(path.join(dir, '.vercel', 'output', 'functions', '_orbit.func', 'index.mjs'))).default
