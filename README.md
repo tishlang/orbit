@@ -1,117 +1,82 @@
-# @tishlang/orbit
+<div align="center">
 
-A hybrid web framework written in [Tish](https://tishlang.com): file-based routing, markdown collections, JSX layouts, Tailwind-style utilities, SEO, client islands, and per-route **static / server / incremental** rendering with streaming. Builds to the [Vercel Build Output API](https://vercel.com/docs/build-output-api) or a plain Node server.
+<a href="https://tishlang.github.io/orbit/"><img src=".github/assets/hero.webp" width="100%" alt="Orbit: markdown in, fast sites out. One page file switches its render mode from static to server to isr, and the build line says what Orbit makes of each."></a>
 
+**[Website](https://tishlang.github.io/orbit/)** ·
+**[Docs](docs/reference.md)** ·
+**[npm](https://www.npmjs.com/package/@tishlang/orbit)** ·
+**[Built with Orbit: space.la](https://space.la)**
+
+</div>
+
+<br>
+
+**Orbit** is a web framework for sites that start as markdown. You get file-based routes, layouts,
+collections, Tailwind-style utilities, SEO and feeds. Each route chooses its own rendering: **static**
+(HTML at build time), **server** (per request, streamed), or **incremental** (cached and revalidated). It's
+written in [Tish](https://github.com/tishlang/tish) and runs the same code under `tish run`, Node and Vercel.
+
+<img src=".github/assets/features.webp" width="100%" alt="Six features, with the selection stepping through them: file-based routing, markdown collections, rendering per route, islands, Tailwind built in, and SEO and feeds.">
+
+## 🚀 Get started
+
+<img src=".github/assets/install.webp" width="100%" alt="A terminal runs npx @tishlang/orbit new my-site, then npm install and npx orbit dev, and Orbit serves the site on localhost:3000.">
+
+```sh
+npx @tishlang/orbit new my-site
+cd my-site && npm install && npx orbit dev
 ```
-npx @tishlang/orbit new my-site && cd my-site && npm install && npx orbit dev
-```
 
-## Project layout
+You get a working site with a blog, an island and a server-rendered page.
+`orbit build` makes a [Vercel Build Output](https://vercel.com/docs/build-output-api) or a plain Node
+server, and static pages also work on any static host.
 
-```
-orbit.config.tish      site metadata, collections, redirects, tailwind theme
-pages/                 routes: index.tish → /, blog/[slug].tish → /blog/:slug, docs/[...path].tish
-pages/_layout.tish     nearest-directory layouts (nest freely)
-pages/404.tish         not-found page
-content/<collection>/  markdown with frontmatter
-islands/               client-side modules (.js or .tish) mounted on demand
-public/                copied verbatim
-styles/*.css           your CSS, prepended to the generated utilities
-```
-
-## Pages
+## 🪐 A page in Orbit
 
 ```tish
-import { raw, articleLd, formatDate } from '@tishlang/orbit'
+// pages/blog/[slug].tish
+import { raw, articleLd } from '@tishlang/orbit'
 
-export let render = 'isr'        // "static" (default) | "server" | "isr"
-export let revalidate = 3600     // isr: seconds
-export let stream = false        // server/isr: flush the shell, stream defer() boundaries
+export let render = 'isr'          // 'static' (default) | 'server' | 'isr'
+export let revalidate = 3600
 
 export fn paths(ctx) { return ctx.collections.blog.map(p => ({ params: { slug: p.slug } })) }
-export async fn load(ctx) {
+export fn load(ctx) {
   let post = ctx.bySlug(ctx.collections.blog, ctx.params.slug)
-  if (post === null) { return { notFound: true } }        // or { redirect: "/x", status: 301, headers: { … } }
-  return { props: { post }, headers: { 'x-custom': '1' } }
+  return post === null ? { notFound: true } : { props: { post } }
 }
-export fn head(ctx, props) { return { title: props.post.title, description: props.post.excerpt, type: 'article', jsonLd: articleLd(ctx.site, props.post, props.post.url) } }
-export fn page(ctx, props) { return <article>{raw(props.post.html)}</article> }
+export fn head(ctx, props) { return { title: props.post.title, type: 'article', jsonLd: articleLd(ctx.site, props.post, props.post.url) } }
+export fn page(ctx, props) { return <article class="mx-auto max-w-2xl">{raw(props.post.html)}</article> }
 ```
 
-`ctx` carries `site`, `path`, `params`, `query`, `headers`, `collections`, `dev`, and helpers `bySlug`, `byTag`, `paginate`, `allTags`, `allItems`. Returning a **string** from `page` writes it verbatim (set `export let contentType = "application/xml"`).
+Markdown in `content/blog/` becomes `ctx.collections.blog`. Its sitemap, RSS and Atom feeds, canonical
+URLs, Open Graph tags and JSON-LD are generated for you. JavaScript only ships to pages that use an
+island: `{island('counter', { start: 3 }, { load: 'visible' })}`.
 
-Layouts export `layout(ctx, children, props)` and optionally `head(ctx, props)`; the page's head wins.
+## ✨ What's in the box
 
-### Streaming
+| | |
+| --- | --- |
+| **Routing** | `pages/` → routes, `[slug]` and `[...path]` segments, nested `_layout.tish`, redirects, trailing-slash rules |
+| **Content** | Markdown collections with frontmatter, tags, drafts, pagination and prev/next |
+| **Rendering** | Static, server or ISR per route; `defer()` streams slow parts after the shell |
+| **Styling** | Tailwind-style utilities generated from the classes you use, with variants, dark mode and arbitrary values |
+| **Client** | Islands loaded on idle, on view or right away; link prefetch on hover |
+| **SEO** | Titles, canonical, Open Graph, Twitter cards, JSON-LD, sitemap, robots.txt, RSS and Atom |
+| **Deploy** | Vercel Build Output, a Node server, or any static host (with `basePath` for sub-paths like GitHub Pages) |
 
-```tish
-export let render = 'server'
-export let stream = true
-export fn page(ctx) { return <div>{defer(slowPromise(), <p>Loading…</p>)}</div> }
-```
+The full reference is in **[docs/reference.md](docs/reference.md)**: page exports, `ctx`, config, Tailwind,
+build targets and tests.
 
-The shell flushes immediately; each `defer()` resolves out-of-order and swaps in place.
+## 📦 Repositories
 
-### Islands
+| Repository | What's in it |
+| --- | --- |
+| **[orbit](https://github.com/tishlang/orbit)** | The framework, the `orbit` CLI, the starter template and [the website](site/) |
+| **[tish](https://github.com/tishlang/tish)** | The language and compiler Orbit is written in |
+| **[tishdoc-parse](https://github.com/tishlang/tishdoc-parse)** · **[tishdoc-render-html](https://github.com/tishlang/tishdoc-render-html)** | The markdown parser and renderer behind collections |
 
-```tish
-{island('counter', { start: 3 }, { load: 'visible' })}     // idle (default) | visible | eager
-```
+<br>
 
-`islands/counter.js` exports `default function mount(el, props)`. Islands are separate ES modules (natural code splitting); `.tish` islands are compiled to JS. Only pages that use islands ship the loader.
-
-### Runtime (fs / fetch / env)
-
-Site code never imports `tish:*` or `node:*` (they cannot run on the JS target). Use the host shim:
-
-```tish
-import { fetch, readFile, env } from '@tishlang/orbit'
-export async fn load(ctx) { let r = await fetch('https://api.github.com/…', { headers: { authorization: 'bearer ' + env('GITHUB_TOKEN') } }); return { props: await r.json() } }
-```
-
-The same code runs natively under `tish run` (tests) and under Node/Vercel.
-
-## Config
-
-```tish
-export let site = {
-  title, description, url, author, lang, twitter, image, icon, themeColor,
-  titleTemplate: '%s · Site',
-  feeds: { rss: '/rss.xml', atom: '/atom.xml', collections: ['blog'], limit: 30 },
-  collections: { blog: { dir: 'content/blog', route: '/blog/:slug', sortBy: 'date', desc: true, drafts: false } },
-  redirects: [{ from: '/old/*', to: '/new/*' }, { from: '/post/:id', to: '/blog/:id', status: 301 }],
-  trailingSlash: true,                  // default: /blog → /blog/ (308); false: /blog/ → /blog
-  tailwind: { theme: { colors: { brand: { '500': '#6366f1' } }, fonts: {}, screens: {} }, preflight: true },
-  styles: ['styles/base.css'],
-  head: ['<link rel="preconnect" …>'], bodyEnd: [],
-  prefetch: true,                       // hover / viewport link prefetch
-  sitemapExclude: ['/drafts/'], robots: ['Disallow: /admin'],
-  functionIncludes: ['content']         // dirs copied into the server function
-}
-```
-
-Generated automatically: `sitemap.xml`, `robots.txt`, RSS/Atom, canonical + Open Graph + Twitter + JSON-LD tags, hashed stylesheet.
-
-## Tailwind
-
-Utilities are generated from the classes found in your pages, content, and islands: spacing scale, sizing, fractions, typography, the full Tailwind color palette with `/alpha`, borders, radius, shadows, grid, transforms, transitions, animations, and arbitrary values (`w-[42px]`, `bg-[#0ff]`). Variants: `sm…2xl`, `hover`, `focus`, `active`, `group-hover`, `dark`, `first/last/odd/even`, `motion-reduce`, `before/after`, `placeholder`, `[&>p]`. Dynamic class names (`"p-" + n`) are not detected.
-
-## Build & deploy
-
-| Command | Output |
-|---|---|
-| `orbit dev` | dev server with live reload (`/_orbit/events` SSE) |
-| `orbit build --target vercel` | `.vercel/output/` (default when `VERCEL=1`): static pages, ISR prerender functions, one Node function for server routes |
-| `orbit build --target node` + `orbit start` | serves `.orbit/static` and runs server/ISR routes in-process with a TTL cache |
-
-On Vercel: framework preset **Other**, build command `npm run build`, no output directory needed. The Tish compiler comes from the `@tishlang/tish` devDependency.
-
-## Tests
-```
-npm test           # unit tests (tish test test/)
-npm run test:e2e   # scaffold the template, build for node and Vercel, serve, and check the responses
-```
-
-## License
-
-[MIT](LICENSE)
+<sub>MIT licensed. The animations here are made with [PopCraft](https://popcraft.app); their source is in
+[.github/popcraft/](.github/popcraft).</sub>

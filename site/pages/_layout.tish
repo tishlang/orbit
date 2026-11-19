@@ -1,0 +1,20 @@
+export fn layout(ctx, children) {
+  let nav = [['/docs/reference/', 'Docs'], ['https://github.com/tishlang/orbit', 'GitHub'], ['https://www.npmjs.com/package/@tishlang/orbit', 'npm']]
+  return (
+    <div class="sky min-h-screen flex flex-col text-slate-100">
+      <header>
+        <nav class="mx-auto max-w-6xl px-4 flex items-center gap-6 py-5">
+          <a href={ctx.href('/')} class="flex items-center gap-2 font-extrabold text-lg"><img src={ctx.href('/orbit.svg')} width="28" height="28" alt="" />Orbit</a>
+          <span class="flex-1"></span>
+          {nav.map(n => <a href={ctx.href(n[0])} class={ctx.path === n[0] ? 'text-brand-300' : 'text-slate-400 hover:text-white'}>{n[1]}</a>)}
+        </nav>
+      </header>
+      <main class="flex-1">{children}</main>
+      <footer class="mx-auto max-w-6xl w-full px-4 py-10 text-sm text-slate-500 flex flex-wrap gap-x-6 gap-y-2">
+        <span>MIT licensed</span>
+        <a class="hover:text-white" href="https://github.com/tishlang/tish">Written in Tish</a>
+        <span>This site is built with Orbit</span>
+      </footer>
+    </div>
+  )
+}

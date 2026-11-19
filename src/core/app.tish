@@ -1,6 +1,7 @@
 // createApp(manifest, opts) builds the route table from the CLI-generated manifest.
 import { fileToRoute, sortRoutes } from './router.tish'
 import { normalizePage } from './page.tish'
+import { basePathOf, withBase } from '../util/path.tish'
 
 fn has(o, k) { return o !== null && k in o && o[k] !== null }
 
@@ -17,15 +18,17 @@ export fn createApp(manifest, opts) {
     if (r.path === '/404') { notFound = entry; continue }
     routes.push(entry)
   }
+  let basePath = basePathOf(site)
   return {
     site: site,
+    basePath: basePath,
     routes: sortRoutes(routes),
     notFound: notFound,
     content: has(o, 'content') ? o.content : {},
     islands: has(o, 'islands') ? o.islands : {},
-    css: has(o, 'css') ? o.css : '/_orbit/styles.css',
+    css: withBase(basePath, has(o, 'css') ? o.css : '/_orbit/styles.css'),
     dev: has(o, 'dev') ? o.dev === true : false,
-    base: has(o, 'base') ? o.base : '/_orbit',
+    base: withBase(basePath, has(o, 'base') ? o.base : '/_orbit'),
     data: has(o, 'data') ? o.data : {}
   }
 }

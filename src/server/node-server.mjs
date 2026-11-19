@@ -72,7 +72,9 @@ export async function startDevServer({ root, port = 3000, dev = true }) {
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost')
-      const p = url.pathname
+      // site.basePath: strip the prefix from requests under it (unprefixed paths still resolve)
+      const base = state?.app?.basePath ?? ''
+      const p = base && (url.pathname === base || url.pathname.startsWith(base + '/')) ? (url.pathname.slice(base.length) || '/') : url.pathname
       if (dev && p === '/_orbit/events') {
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' })
         res.write('event: hello\ndata: 1\n\n'); clients.add(res); req.on('close', () => clients.delete(res)); return
@@ -85,7 +87,7 @@ export async function startDevServer({ root, port = 3000, dev = true }) {
       const isFile = p.lastIndexOf('.') > p.lastIndexOf('/')
       if (p.length > 1 && !isFile && !p.startsWith('/_orbit/') && slash !== p.endsWith('/')) {
         const to = slash ? p + '/' : p.slice(0, -1)
-        if (tryStatic(staticDir, to) || tryStatic(dev ? devStatic : null, to)) { res.writeHead(308, { location: to + url.search }); res.end(); return }
+        if (tryStatic(staticDir, to) || tryStatic(dev ? devStatic : null, to)) { res.writeHead(308, { location: base + to + url.search }); res.end(); return }
       }
       const sf = tryStatic(staticDir, p) ?? tryStatic(dev ? devStatic : null, p) ?? tryStatic(dev ? path.join(root, 'public') : null, p)
       if (sf) { sendFile(res, sf, dev ? { 'cache-control': 'no-store' } : {}); return }

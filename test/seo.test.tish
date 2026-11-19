@@ -27,4 +27,13 @@ describe('seo', () => {
     expect(rss.indexOf('<pubDate>Thu, 01 Jan 1970 00:00:00 GMT</pubDate>') >= 0).toBe(true)
     expect(rss.indexOf('<category>a</category>') >= 0).toBe(true)
   })
+  it('puts site.basePath in absolute urls', () => {
+    let sub = { title: 'Site', url: 'https://tishlang.github.io', basePath: '/orbit' }
+    expect(absoluteUrl(sub, '/docs/')).toBe('https://tishlang.github.io/orbit/docs/')
+    expect(absoluteUrl(sub, '/')).toBe('https://tishlang.github.io/orbit/')
+    let hd = renderHead({ title: 'S', basePath: '/orbit', icon: '/i.svg', feeds: { rss: '/rss.xml' } }, '/', null)
+    expect(hd.indexOf('<link rel="icon" href="/orbit/i.svg">') >= 0).toBe(true)
+    expect(hd.indexOf('href="/orbit/rss.xml"') >= 0).toBe(true)
+    expect(renderSitemap(sub, [{ url: '/' }]).indexOf('<loc>https://tishlang.github.io/orbit/</loc>') >= 0).toBe(true)
+  })
 })

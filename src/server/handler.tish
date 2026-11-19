@@ -6,6 +6,7 @@ import { renderHead } from '../core/seo.tish'
 import { islandsIn, islandScripts } from '../core/islands.tish'
 import { escapeHtml, escapeAttr } from '../util/html.tish'
 import { bySlug, byTag, paginate, allTags, allItems } from '../core/content.tish'
+import { withBase, stripBase } from '../util/path.tish'
 
 fn has(o, k) { return o !== null && k in o && o[k] !== null }
 
@@ -23,6 +24,9 @@ export fn makeContext(app, req, params, route) {
     dev: app.dev,
     mode: route === null ? null : route.page.render,
     route: route === null ? null : route.path,
+    base: app.basePath,
+    // href('/blog/') → '/docs/blog/' under site.basePath '/docs'; use it for links you write yourself
+    href: p => withBase(app.basePath, p),
     // helpers
     bySlug: bySlug, byTag: byTag, paginate: paginate, allTags: allTags, allItems: allItems,
     islands: [],
@@ -150,18 +154,25 @@ fn queryString(req) {
   return '?' + keys.map(k => encodeURIComponent(k) + '=' + encodeURIComponent(req.query[k])).join('&')
 }
 
-export async fn handle(app, req) {
+export async fn handle(app, rawReq) {
+  // Requests may arrive with or without site.basePath; routes never include it.
+  let req = rawReq
+  if (app.basePath !== '') {
+    req = {}
+    for (let k of Object.keys(rawReq)) { req[k] = rawReq[k] }
+    req.path = stripBase(app.basePath, rawReq.path)
+  }
   let path = req.path
   let redirects = has(app.site, 'redirects') ? app.site.redirects : []
   let rd = matchRedirect(redirects, path)
-  if (rd !== null) { return { status: rd.status, headers: { location: rd.to }, chunks: [''] } }
+  if (rd !== null) { return { status: rd.status, headers: { location: withBase(app.basePath, rd.to) }, chunks: [''] } }
   // Trailing-slash normalization, as on Vercel: site.trailingSlash (default true) sends /blog to
   // /blog/; false sends /blog/ to /blog. Paths with an extension (files) are left alone.
   let slash = !(has(app.site, 'trailingSlash') && app.site.trailingSlash === false)
   let isFile = path.lastIndexOf('.') > path.lastIndexOf('/')
   if (path.length > 1 && !isFile && slash !== path.endsWith('/') && matchRoute(app.routes, path) !== null) {
     let to = slash ? path + '/' : path.slice(0, path.length - 1)
-    return { status: 308, headers: { location: to + queryString(req) }, chunks: [''] }
+    return { status: 308, headers: { location: withBase(app.basePath, to) + queryString(req) }, chunks: [''] }
   }
   let m = matchRoute(app.routes, path)
   if (m === null) { return await renderNotFound(app, req) }
