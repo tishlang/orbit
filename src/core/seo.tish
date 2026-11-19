@@ -1,5 +1,6 @@
 import { escapeHtml, escapeXml, stripTags } from '../util/html.tish'
 import { toRFC822, toISO, parseDate } from '../util/date.tish'
+import { basePathOf, withBase } from '../util/path.tish'
 
 fn opt(o, k, d) { return (o !== null && k in o && o[k] !== null) ? o[k] : d }
 
@@ -7,7 +8,7 @@ export fn absoluteUrl(site, path) {
   if (path === null) { return null }
   if (path.startsWith('http://') || path.startsWith('https://')) { return path }
   let base = opt(site, 'url', '').replace(/\/$/, '')
-  return base + (path.startsWith('/') ? path : '/' + path)
+  return base + withBase(basePathOf(site), path.startsWith('/') ? path : '/' + path)
 }
 
 // meta: { title, description, image, canonical, type, noindex, published, modified, author, tags, jsonLd, extra: [html strings] }
@@ -49,12 +50,13 @@ export fn renderHead(site, url, meta) {
   if (image !== null) { out.push('<meta name="twitter:image" content="' + escapeHtml(image) + '">') }
   let themeColor = opt(site, 'themeColor', null)
   if (themeColor !== null) { out.push('<meta name="theme-color" content="' + escapeHtml(themeColor) + '">') }
+  let bp = basePathOf(site)
   let icon = opt(site, 'icon', null)
-  if (icon !== null) { out.push('<link rel="icon" href="' + escapeHtml(icon) + '">') }
+  if (icon !== null) { out.push('<link rel="icon" href="' + escapeHtml(withBase(bp, icon)) + '">') }
   let feeds = opt(site, 'feeds', null)
   if (feeds !== null) {
-    if (opt(feeds, 'rss', null) !== null) { out.push('<link rel="alternate" type="application/rss+xml" title="' + escapeHtml(siteTitle) + '" href="' + escapeHtml(feeds.rss) + '">') }
-    if (opt(feeds, 'atom', null) !== null) { out.push('<link rel="alternate" type="application/atom+xml" title="' + escapeHtml(siteTitle) + '" href="' + escapeHtml(feeds.atom) + '">') }
+    if (opt(feeds, 'rss', null) !== null) { out.push('<link rel="alternate" type="application/rss+xml" title="' + escapeHtml(siteTitle) + '" href="' + escapeHtml(withBase(bp, feeds.rss)) + '">') }
+    if (opt(feeds, 'atom', null) !== null) { out.push('<link rel="alternate" type="application/atom+xml" title="' + escapeHtml(siteTitle) + '" href="' + escapeHtml(withBase(bp, feeds.atom)) + '">') }
   }
   let jsonLd = opt(m, 'jsonLd', null)
   if (jsonLd !== null) {

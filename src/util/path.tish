@@ -52,3 +52,24 @@ export fn stripExt(p) {
   let e = extname(p)
   return e === '' ? p : p.slice(0, p.length - e.length)
 }
+
+// site.basePath: the URL prefix a site is served under ('/docs', or '' at the root).
+export fn basePathOf(site) {
+  if (site === null || !('basePath' in site) || site.basePath === null) { return '' }
+  let b = site.basePath.trim().replace(/\/+$/, '')
+  if (b === '') { return '' }
+  return b.startsWith('/') ? b : '/' + b
+}
+// Prefixes a root-relative path with the base path. Other URLs ('https://…', '#x', 'a/b') are left alone.
+export fn withBase(base, p) {
+  if (base === '' || p === null || !p.startsWith('/') || p.startsWith('//')) { return p }
+  if (p === base || p.startsWith(base + '/')) { return p }
+  return base + p
+}
+// Removes the base path from a request path; '/docs' and '/docs/' both become '/'.
+export fn stripBase(base, p) {
+  if (base === '') { return p }
+  if (p === base) { return '/' }
+  if (p.startsWith(base + '/')) { return p.slice(base.length) }
+  return p
+}
