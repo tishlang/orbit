@@ -40,7 +40,7 @@
   "scripts": {
     "test": "tish test test/",
     "test:e2e": "node test/e2e.mjs",
-    "lint": "tish-lint --deny-warnings src test templates/default"
+    "lint": "tish-lint --deny-warnings src test templates/default site/pages site/orbit.config.tish"
   },
   "dependencies": {
     "@tishlang/tishdoc-parse": "^1.0.0",
