@@ -1,0 +1,32 @@
+/* The Orbit website: deep space, indigo planet, a cyan → violet ring. */
+:root { color-scheme: dark; }
+body { background: #06070f; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.sky {
+  background:
+    radial-gradient(900px 500px at 15% -10%, rgba(99, 102, 241, .28), transparent 70%),
+    radial-gradient(900px 600px at 95% 30%, rgba(34, 211, 238, .12), transparent 70%);
+}
+.wordmark { background: linear-gradient(90deg, #22d3ee, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.glass { background: rgba(17, 19, 42, .85); border: 1px solid rgba(255, 255, 255, .1); }
+pre, code { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.code { font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.code .k { color: #c4b5fd; } .code .s { color: #67e8f9; } .code .f { color: #a5b4fc; } .code .c { color: #5c6180; }
+.moon { animation: orbit 8s linear infinite; transform-origin: 60px 60px; }
+@keyframes orbit { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .moon { animation: none; } }
+
+/* Docs: markdown from docs/*.md */
+.doc h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -.02em; margin: 0 0 1.5rem; }
+.doc h2 { font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, .08); }
+.doc h3 { font-size: 1.15rem; font-weight: 700; margin: 2rem 0 .75rem; }
+.doc p, .doc li { color: #c9cce0; line-height: 1.75; margin: .75rem 0; }
+.doc ul { padding-left: 1.25rem; list-style: disc; }
+.doc a { color: #a5b4fc; text-decoration: underline; text-underline-offset: 3px; }
+.doc code { background: rgba(255, 255, 255, .07); padding: .1rem .35rem; border-radius: .3rem; font-size: .88em; }
+.doc pre { background: rgba(17, 19, 42, .85); border: 1px solid rgba(255, 255, 255, .1); border-radius: .75rem; padding: 1rem 1.25rem; overflow-x: auto; margin: 1.25rem 0; }
+.doc pre code { background: none; padding: 0; font-size: .85rem; line-height: 1.7; }
+.doc table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: .95rem; }
+.doc th, .doc td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid rgba(255, 255, 255, .08); color: #c9cce0; }
+.doc th { color: #f3f4fb; }
+.copy { font: 600 .75rem Inter, sans-serif; color: #c4b5fd; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); border-radius: .4rem; padding: .25rem .6rem; cursor: pointer; }
+.copy:hover { border-color: #818cf8; }

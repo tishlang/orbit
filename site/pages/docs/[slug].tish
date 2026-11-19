@@ -1,0 +1,18 @@
+import { raw } from '@tishlang/orbit'
+
+export fn paths(ctx) { return ctx.collections.docs.map(d => ({ params: { slug: d.slug } })) }
+
+export fn load(ctx) {
+  let doc = ctx.bySlug(ctx.collections.docs, ctx.params.slug)
+  if (doc === null) { return { notFound: true } }
+  // The docs link to the repo's files (../LICENSE, ../README.md); on the site those live on GitHub.
+  let html = doc.html.replaceAll('href="../', 'href="https://github.com/tishlang/orbit/blob/main/')
+  let m = /^#\s+(.+)$/m.exec(doc.body)
+  return { props: { html: html, title: m === null ? doc.slug : m[1] } }
+}
+
+export fn head(ctx, props) { return { title: props.title, description: 'Orbit reference: page exports, ctx, config, Tailwind utilities, build targets and tests.' } }
+
+export fn page(ctx, props) {
+  return <article class="doc mx-auto max-w-3xl px-4 py-10">{raw(props.html)}</article>
+}

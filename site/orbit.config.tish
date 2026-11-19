@@ -1,0 +1,31 @@
+// The Orbit website, built with Orbit and served by GitHub Pages at tishlang.github.io/orbit/.
+export let site = {
+  title: 'Orbit',
+  titleTemplate: '%s · Orbit',
+  description: 'Orbit is a markdown-first web framework written in Tish: file-based routing, collections, islands, Tailwind-style utilities, SEO, and static, server or incremental rendering per route.',
+  url: 'https://tishlang.github.io',
+  basePath: '/orbit',
+  author: 'Tish',
+  lang: 'en',
+  themeColor: '#06070f',
+  icon: '/orbit.svg',
+  htmlClass: 'dark',
+  trailingSlash: true,
+  prefetch: true,
+  styles: ['styles/site.css'],
+  head: [
+    '<link rel="preconnect" href="https://fonts.googleapis.com">',
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">'
+  ],
+  // The docs are the repo's own docs/ folder, so the README links and the site never drift apart.
+  collections: {
+    docs: { dir: '../docs', route: '/docs/:slug', sortBy: 'title' }
+  },
+  tailwind: {
+    theme: {
+      colors: { brand: { '300': '#a5b4fc', '400': '#818cf8', '500': '#6366f1', '600': '#4f46e5' }, ring: { '400': '#22d3ee' }, space: { '900': '#06070f', '800': '#0c0e1d', '700': '#12142a' } },
+      fonts: { sans: 'Inter, ui-sans-serif, system-ui, sans-serif', mono: 'JetBrains Mono, ui-monospace, monospace' }
+    }
+  }
+}
