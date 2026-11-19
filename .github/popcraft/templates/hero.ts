@@ -11,12 +11,12 @@ const { dotPaths } = marks
 
 const DUR = 8000
 const H = 540
-// [render mode, what the build makes of it, glyph]
+// [render mode, what the build makes of it, its short name]
 const MODES: [string, string, string][] = [
-  ["'static'", 'prerendered to HTML at build time', '○'],
-  ["'server'", 'rendered per request, streamed', 'λ'],
-  ["'isr'", 'cached, revalidated every hour', 'λ'],
-  ["'static'", 'prerendered to HTML at build time', '○'],
+  ["'static'", 'prerendered to HTML at build time', 'SSG'],
+  ["'server'", 'rendered per request, streamed', 'SSR'],
+  ["'isr'", 'cached, revalidated every hour', 'ISR'],
+  ["'static'", 'prerendered to HTML at build time', 'SSG'],
 ]
 const STEP = DUR / MODES.length
 
@@ -88,13 +88,13 @@ export default defineTemplate({
     line([['export let ', 'kw'], ['render', 'text'], [' = ', 'dim'], [MODES[0][0], 'str']], 'Render')
     line([['export let ', 'kw'], ['revalidate', 'text'], [' = ', 'dim'], ['3600', 'str']])
     line([[' ', 'dim']])
-    line([['export fn ', 'kw'], ['page', 'fn'], ['(ctx, { post }) {', 'dim']])
-    line([['  return ', 'kw'], ['<article>', 'g2'], ['{raw(post.html)}', 'text'], ['</article>', 'g2']])
+    line([['export fn ', 'kw'], ['page', 'fn'], ['(ctx, props) {', 'dim']])
+    line([['  return ', 'kw'], ['raw', 'fn'], ['(props.post.html)', 'text']])
     line([['}', 'dim']])
     // The build line: what Orbit made of the page.
     k.patch(k.rect(ed, 10, 1, 'line', { name: 'Divider' }), { layoutSizingHorizontal: 'FILL' })
     const out = k.stack(ed, { direction: 'HORIZONTAL', gap: 12, align: 'CENTER', width: 'FILL', height: 58, padding: { top: 0, right: 24, bottom: 0, left: 24 }, fill: 'hit', name: 'Build' })
-    k.text(out, MODES[0][2], { style: 'Out', color: 'g2', width: 18, name: 'Glyph' })
+    k.text(out, MODES[0][2], { style: 'Out', color: 'g2', width: 40, name: 'Glyph' })
     k.text(out, '/blog/hello/', { style: 'Out', color: 'text', autoWidth: true, name: 'Route' })
     k.text(out, MODES[0][1], { style: 'Out', color: 'dim', width: 'FILL', name: 'Made' })
 

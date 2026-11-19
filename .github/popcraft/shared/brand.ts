@@ -4,7 +4,7 @@
 import type { Kit } from '@popcraft/kit'
 
 export const W = 1280
-export const LOGO = new URL('../assets/orbit.svg', import.meta.url)
+export const LOGO = new URL('../assets/orbit.png', import.meta.url)
 
 export const COLORS = {
   paper: '#06070F',

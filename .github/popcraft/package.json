@@ -1,1 +1,1 @@
-{"name":"orbit-readme-art","private":true,"type":"module","devDependencies":{"@popcraft/cli":"2.2.0","@popcraft/kit":"2.2.0"}}
+{"name":"orbit-readme-art","private":true,"type":"module","devDependencies":{"@popcraft/cli":"2.2.0","@popcraft/kit":"2.2.0","puppeteer":"^25.18.1"}}

@@ -9,11 +9,12 @@ The animated pictures in [../assets](../assets) are [PopCraft](https://popcraft.
 | [templates/features.ts](templates/features.ts) | `features.webp`: six features with the code that turns each on (6 s) |
 | [templates/install.ts](templates/install.ts) | `install.webp`: `orbit new` and `orbit dev` in a terminal (7 s) |
 
-Colors and the logo are in [shared/brand.ts](shared/brand.ts) and [assets/orbit.svg](assets/orbit.svg).
+Colors and the logo are in [shared/brand.ts](shared/brand.ts) and [assets/orbit.svg](assets/orbit.svg). PopCraft pictures
+take raster images, so `node scripts/logo-png.mjs` writes `assets/orbit.png` from the SVG.
 
 ## Render
 
-Needs Node 24, the PopCraft app running locally (it draws the frames), puppeteer's headless Chrome,
+Needs Node 24, the PopCraft app running locally (it draws the frames), puppeteer (installed here),
 `ffmpeg` and `img2webp` (`brew install ffmpeg webp`).
 
 ```sh

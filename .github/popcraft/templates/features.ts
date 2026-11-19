@@ -11,10 +11,10 @@ const H = 560
 const DUR = 6000
 const FEATURES: [string, string, string, string][] = [
   ['File-based routing', 'Pages, nested layouts and dynamic segments.', 'blog/[slug].tish', '/blog/:slug'],
-  ['Markdown collections', 'Frontmatter, tags, drafts, prev/next, pagination.', 'content/blog/*.md', 'ctx.collections'],
+  ['Markdown collections', 'Frontmatter, tags, drafts, prev/next, pagination.', 'content/*.md', 'ctx.collections'],
   ['Rendering per route', 'Static, server or incremental, page by page.', "render = 'isr'", 'cached 1h'],
   ['Islands', 'Ship JavaScript only where a page needs it.', "island('chart')", 'when visible'],
-  ['Tailwind built in', 'Utilities generated from the classes you use.', 'p-4 dark:bg-…', '3 kB css'],
+  ['Tailwind built in', 'Utilities generated from the classes you use.', 'p-4 dark:bg-…', 'only what you use'],
   ['SEO and feeds', 'Canonical, Open Graph, JSON-LD, sitemap, RSS.', 'orbit build', 'all generated'],
 ]
 const COLS = 3, TW = 368, TH = 172, GAP = 24
@@ -69,7 +69,7 @@ export default defineTemplate({
       k.text(tile, body, { style: 'Tile body', color: 'dim', width: 'FILL', name: 'Tile body' })
       const pill = k.stack(tile, { direction: 'HORIZONTAL', gap: 10, align: 'CENTER', width: 'HUG', radius: 10, padding: { top: 7, right: 12, bottom: 7, left: 12 }, fill: 'glass2', name: 'Example' })
       k.text(pill, query, { style: 'Query', color: 'text', autoWidth: true, name: 'Example code' })
-      k.text(pill, '→', { style: 'Query', color: 'g2', autoWidth: true, name: 'Arrow' })
+      k.text(pill, '->', { style: 'Query', color: 'g2', autoWidth: true, name: 'Arrow' })
       k.text(pill, answer, { style: 'Query', color: 'g3', autoWidth: true, name: 'Example result' })
     })
     k.cues(sheet, [{ layer: 'Example', preset: 'pulse', at: 760, params: { duration: 360, amount: 0.05 }, stagger: { delay: 1000 } }])

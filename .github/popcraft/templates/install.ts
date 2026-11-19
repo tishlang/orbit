@@ -52,7 +52,7 @@ export default defineTemplate({
     cmd('cd my-site && npm install && npx orbit dev', 'Dev')
     out('ready in 412ms  (2 content items)', 'dim', 'Ready')
     const live = k.stack(body, { direction: 'HORIZONTAL', gap: 12, width: 'FILL', padding: { top: 10, right: 0, bottom: 0, left: 0 }, name: 'Live' })
-    k.text(live, 'orbit dev →', { style: 'Mono bold', color: 'text', autoWidth: true })
+    k.text(live, 'orbit dev ->', { style: 'Mono bold', color: 'text', autoWidth: true })
     k.text(live, 'http://localhost:3000', { style: 'Mono', color: 'g3', autoWidth: true, name: 'Live url' })
 
     k.cues(sheet, [
