@@ -87,10 +87,11 @@ jobs:
       - run: npm ci --no-audit --no-fund
 
       # actions/checkout configures no identity, and sem cannot create the tag without one.
+      # Use whoever triggered the run (their GitHub noreply address), not a hard-coded account.
       - name: Configure git identity for the release tag
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
       - name: Next version via sem (dry-run)
         id: sem
