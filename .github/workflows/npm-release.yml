@@ -1,14 +1,8 @@
-# Releases and npm publishing, in one workflow: npm trusted publishing names a single workflow file.
+# Publish to npm when a GitHub release is promoted from prerelease to full release.
+# Downloads the npm package tarball ci.yml attached to the release (no rebuild).
 #
-# - Push to main: sem reads the conventional commits since the last tag (feat / fix / perf /
-#   BREAKING CHANGE bump; chore / docs / ci / test do not), tags vX.Y.Z and publishes the GitHub
-#   release, then this job publishes that version to npm. It happens in the same job because a
-#   release made with GITHUB_TOKEN does not trigger other workflows.
-# - A release published by hand (or edited): publishes its tag's version.
-# Either way a version already on npm is skipped, so re-runs stay green.
-#
-# AUTH: npm OIDC trusted publishing (no NPM_TOKEN). ONE-TIME setup on npmjs.com, after the first
-# publish: npmjs.com > @tishlang/orbit > Settings > "Trusted Publisher" > GitHub Actions:
+# AUTH: npm OIDC trusted publishing (no NPM_TOKEN). One-time setup on npmjs.com:
+# @tishlang/orbit > Settings > "Trusted Publisher" > GitHub Actions:
 #   Organization or user: tishlang
 #   Repository:           orbit
 #   Workflow filename:    npm-release.yml
@@ -18,96 +12,103 @@
 name: NPM release
 
 on:
-  push:
-    branches: [main]
   release:
     types: [published, edited]
+  # Re-dispatch to publish a release the event never reached — promoting a prerelease does not
+  # always fire `edited`. Publishing is idempotent: a version already on npm is skipped.
   workflow_dispatch:
-
-concurrency:
-  group: npm-release-${{ github.ref }}
-  cancel-in-progress: false
+    inputs:
+      tag:
+        description: "Release tag to publish, e.g. v0.1.5"
+        required: true
+        type: string
 
 jobs:
-  release:
-    name: Release and publish
-    if: github.event_name != 'release' || github.event.release.prerelease == false
+  publish:
+    name: Publish to npm
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     permissions:
-      contents: write   # sem creates the tag and the GitHub release
+      contents: write   # update the release body with the npm URL
       id-token: write   # npm OIDC trusted publishing
+    env:
+      # Provenance disabled: the package is published from a tarball built in CI, not this run.
+      NPM_CONFIG_PROVENANCE: "false"
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Resolve the release
+        id: rel
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          JSON=$(curl -sL -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG")
+          ID=$(echo "$JSON" | jq -r '.id')
+          if [ -z "$ID" ] || [ "$ID" = "null" ]; then echo "No release found for tag $TAG"; exit 1; fi
+          if [ "$(echo "$JSON" | jq -r '.prerelease')" = "true" ]; then
+            echo "::error::$TAG is still a prerelease. Set it as the latest release first."; exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       - name: Upgrade npm for OIDC trusted publishing (needs >= 11.5.1)
-        run: npm install -g npm@latest
-
-      - run: npm ci --no-audit --no-fund
-
-      - name: Test before releasing
-        if: github.event_name != 'release'
-        run: npm test && npm run test:e2e
-
-      # actions/checkout configures no identity, and sem cannot create the tag without one.
-      - name: Configure git identity for the release tag
-        if: github.event_name != 'release'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm install -g "npm@^11"
+          npm --version
 
-      - name: Release via sem
-        id: sem
-        if: github.event_name != 'release'
-        uses: tishlang/sem@v1
-        with:
-          config: |
-            branches: [main]
-            plugins:
-              - "@sem/commit-analyzer"
-              - "@sem/release-notes-generator"
-              - ["@sem/github", { "successComment": false }]
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Version to publish
-        id: version
+      - name: Skip if already on npm
+        id: check
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
-          elif [ "${{ steps.sem.outputs.new_release_published }}" = "true" ]; then
-            TAG="v${{ steps.sem.outputs.new_release_version }}"
-          else
-            # No new release: publish the latest tag if npm doesn't have it yet, so re-running this
-            # workflow retries a publish that failed (it is skipped below when already published).
-            TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
-            if [ -z "$TAG" ]; then
-              echo "::notice::No release tag yet."
-              echo "publish=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            echo "::notice::No new release; checking whether the latest tag $TAG is on npm."
-          fi
-          VERSION="${TAG#v}"
-          NAME="$(node -p "require('./package.json').name")"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
-            echo "::notice::${NAME}@${VERSION} is already on npm; skipping."
+          if npm view "@tishlang/orbit@${{ steps.rel.outputs.version }}" version >/dev/null 2>&1; then
+            echo "::notice::@tishlang/orbit@${{ steps.rel.outputs.version }} is already on npm; skipping."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish to npm
-        if: steps.version.outputs.publish == 'true'
+      - name: Download npm package tarball from release
+        if: steps.check.outputs.publish == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git checkout -q "v${{ steps.version.outputs.version }}"
-          npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
-          npm publish --access public
+          # Look the asset up through the API, not `github.event.release.assets`: that payload is frozen
+          # when the event fires and may predate the upload (tishlang/tish#593).
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            URL=$(curl -sL -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/${{ steps.rel.outputs.id }}/assets?per_page=100" \
+              | jq -r '.[] | select(.name == "tishlang-orbit-npm-package.tgz" and .state == "uploaded") | .url')
+            [ -n "$URL" ] && [ "$URL" != "null" ] && break
+            echo "tarball not uploaded yet (attempt $attempt/10) — waiting 30s"
+            sleep 30
+          done
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "Release has no uploaded asset tishlang-orbit-npm-package.tgz"; exit 1
+          fi
+          curl -sL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/octet-stream" "$URL" -o tishlang-orbit-npm-package.tgz
+
+      - name: Publish @tishlang/orbit to npm
+        if: steps.check.outputs.publish == 'true'
+        run: npm publish tishlang-orbit-npm-package.tgz --access public
+
+      - name: Update release description with npm URL
+        if: steps.check.outputs.publish == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NPM_URL="https://www.npmjs.com/package/@tishlang/orbit/v/${{ steps.rel.outputs.version }}"
+          REL="https://api.github.com/repos/${{ github.repository }}/releases/${{ steps.rel.outputs.id }}"
+          BODY=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "$REL" | jq -r '.body // ""')
+          NEW="${BODY}
+
+          ---
+          Published to npm: ${NPM_URL}"
+          curl -s -X PATCH -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+            "$REL" -d "$(printf '%s' "$NEW" | jq -Rs '{body: .}')" >/dev/null
