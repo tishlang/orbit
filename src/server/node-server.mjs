@@ -54,6 +54,8 @@ export async function startDevServer({ root, port = 3000, dev = true }) {
   if (dev) {
     await build()
     const watchDirs = ['pages', 'content', 'islands', 'public', 'styles', 'lib', 'components', 'orbit.config.tish'].map(d => path.join(root, d)).filter(p => fs.existsSync(p))
+    // Heartbeat: reaps SSE clients whose socket died without a close event.
+    setInterval(() => { for (const c of clients) { if (c.destroyed || c.writableEnded) clients.delete(c); else c.write(': ping\n\n') } }, 15000).unref()
     let timer = null
     for (const d of watchDirs) {
       fs.watch(d, { recursive: fs.statSync(d).isDirectory() }, (ev, file) => {
@@ -77,7 +79,7 @@ export async function startDevServer({ root, port = 3000, dev = true }) {
       const p = base && (url.pathname === base || url.pathname.startsWith(base + '/')) ? (url.pathname.slice(base.length) || '/') : url.pathname
       if (dev && p === '/_orbit/events') {
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' })
-        res.write('event: hello\ndata: 1\n\n'); clients.add(res); req.on('close', () => clients.delete(res)); return
+        res.write('retry: 1000\nevent: hello\ndata: 1\n\n'); clients.add(res); res.on('close', () => clients.delete(res)); return
       }
       if (dev && p === '/_orbit/styles.css') { res.writeHead(200, { 'content-type': MIME.css, 'cache-control': 'no-store' }); res.end(state?.css ?? ''); return }
       if (p === '/_orbit/islands.js' || p === '/_orbit/livereload.js' || p === '/_orbit/prefetch.js') { sendFile(res, path.join(here, '..', 'client', path.basename(p)), { 'cache-control': 'no-store' }); return }
